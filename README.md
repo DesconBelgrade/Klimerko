@@ -1,3 +1,3 @@
 # Klimerko
-![Klimerko Image](klimerko-tile.png)  
+![Klimerko Image](extras/klimerko-tile.png)  
 ☁ DIY Air Quality Measuring Device  
