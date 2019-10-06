@@ -136,20 +136,21 @@ void readPMS() {
     int PM1 = data.PM_AE_UG_1_0;
     int PM2_5 = data.PM_AE_UG_2_5;
     int PM10 = data.PM_AE_UG_10_0;
-    
+
+
     // Assign a text value of how good the air is
-    if (PM2_5 <= 30) {
-      airQuality = "Excellent";
-    } else if (PM2_5 >= 31 && PM2_5 <= 60) {
+    if (PM2_5 <= 12) {
       airQuality = "Good";
-    } else if (PM2_5 >= 61 && PM2_5 <= 90) {
-      airQuality = "Medium";
-    } else if (PM2_5 >= 91 && PM2_5 <= 120) {
+    } else if (PM2_5 >= 13 && PM2_5 <= 35) {
+      airQuality = "Moderate";
+    } else if (PM2_5 >= 36 && PM2_5 <= 55) {
       airQuality = "Poor";
-    } else if (PM2_5 >= 121 && PM2_5 <= 250) {
-      airQuality = "Very poor";
+    } else if (PM2_5 >= 56 && PM2_5 <= 150) {
+      airQuality = "Unhealthy";
+    } else if (PM2_5 >= 151 && PM2_5 <= 250) {
+      airQuality = "Very Unhealthy";
     } else if (PM2_5 > 250) {
-      airQuality = "Terrible";
+      airQuality = "Hazardous";
     }
 
     // Print via SERIAL
