@@ -3,7 +3,8 @@
  * 
  *  --------------- Project "KLIMERKO" ---------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
- *  This is a continued effort from https://descon.me/2018/winning-product/ supported by Beogradska Otvorena Skola // www.bos.rs
+ *  This is a continued effort from https://descon.me/2018/winning-product/
+ *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
  *  Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
  *  3D Case for the device designed and built by Dusan Nikic
  *  Device designed, coded and built by Vanja Stanic // www.vanjastanic.com
