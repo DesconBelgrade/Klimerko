@@ -6,12 +6,12 @@
  *  This is a continued effort from https://descon.me/2018/winning-product/
  *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
  *  Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
- *  3D Case for the device designed and built by Dusan Nikic
+ *  3D Case for the device designed and built by Dusan Nikic // nikic.dule@gmail.com
  *  Device designed, coded and built by Vanja Stanic // www.vanjastanic.com
 */
 
 #include "src/AllThingsTalk/AllThingsTalk.h"
-#include "src/AdafruitUnifiedSensor/Adafruit_Sensor.h"
+#include "src/AdafruitBME280/Adafruit_Sensor.h"
 #include "src/AdafruitBME280/Adafruit_BME280.h"
 #include "src/pmsLibrary/PMS.h"
 #include <SoftwareSerial.h>
