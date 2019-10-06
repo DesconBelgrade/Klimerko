@@ -69,6 +69,12 @@ void setup() {
   device.setActuationCallback(INTERVAL_ASSET, controlInterval);
   device.init();
   publishInterval();
+  delay(1000);
+  Serial.println("//// Your device is up and running! ////"
+  Serial.print("//// Sensor data will be read and published in ");
+  Serial.print(readInterval);
+  Serial.println(" minute(s)) ////");
+  Serial.println("//// You can change this interval from AllThingsTalk Maker ////");
 }
 
 // Function to read both sensors at the same time
