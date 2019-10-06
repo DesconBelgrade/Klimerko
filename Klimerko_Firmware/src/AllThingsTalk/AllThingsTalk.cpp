@@ -31,7 +31,7 @@
 #include "GeoLocation.h"
 #include "BinaryPayload.h"
 #include "PubSubClient.h"
-#include <ArduinoJson.h>
+#include "ArduinoJson.h"
 
 #ifdef ESP8266
 #include <Ticker.h>
