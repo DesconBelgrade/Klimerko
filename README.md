@@ -1,7 +1,7 @@
 
 # Build your “Klimerko” Air Quality Monitoring Station
 
-![Klimerko Tile](klimerko-tile.png)
+![Klimerko Tile](extras/klimerko-tile.png)
 
 # Parts
 ![Klimerko Diagram](extras/klimerko-diagram.png)
