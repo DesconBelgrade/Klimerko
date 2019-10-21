@@ -73,7 +73,7 @@ template<typename T> void Device::debugVerbose(T message, char separator) {
 void Device::fadeLed() {
     if (_ledEnabled == true) {
         if (fader.active() == false) {
-            fader.attach_ms(1, std::bind(&Device::fadeLed, this));
+            fader.attach_ms(5, std::bind(&Device::fadeLed, this));
         } else {
             unsigned long thisMillis = millis();
             if (thisMillis - _previousFadeMillis >= _fadeInterval) {
@@ -257,9 +257,9 @@ void Device::connectWiFi() {
             debugVerbose(_wifiHostname);
         }
         debug("Connecting to WiFi:", ' ');
-        debug(wifiCreds->getSsid(), '.');
+        debug(wifiCreds->getSsid());
         WiFi.begin(wifiCreds->getSsid(), wifiCreds->getPassword());
-        while (WiFi.status() != WL_CONNECTED) delay(1000); debug("", '.');
+        while (WiFi.status() != WL_CONNECTED) delay(1);
         debug("");
         debug("Connected to WiFi!");
         debugVerbose("IP Address:", ' ');
@@ -312,7 +312,7 @@ void Device::connectAllThingsTalk() {
                         debug("Network connection was broken");
                         break;
                     case -2:
-                        debug("Network connection failed. This is a general error, but maybe check your credentials for AllThingsTalk");
+                        debug("Network connection failed. (Try checking if the asset you're publishing to exsists or if your credentials are correct)");
                         break;
                     case -1:
                         debug("Client disconnected cleanly (intentionally)");

@@ -3,11 +3,12 @@
  * 
  *  --------------- Project "KLIMERKO" ---------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
+ *  Air Quality Scale (PM 10 based): Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
  *  This is a continued effort from https://descon.me/2018/winning-product/
  *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
  *  Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
  *  3D Case for the device designed and built by Dusan Nikic // nikic.dule@gmail.com
- *  Device designed, coded and built by Vanja Stanic // www.vanjastanic.com
+ *  Programmed and built by Vanja Stanic // www.vanjastanic.com
 */
 
 #include "src/AllThingsTalk/AllThingsTalk.h"
@@ -16,15 +17,7 @@
 #include "src/pmsLibrary/PMS.h"
 #include <SoftwareSerial.h>
 #include <Wire.h>
-
-// ----------- CUSTOMIZABLE PART BEGIN -----------
-
-// Your WiFi and Device Credentials here
-auto wifiCreds = WifiCredentials("WIFI_SSID","WIFI_PASSWORD");
-auto deviceCreds = DeviceConfig("YOUR_DEVICE_ID","YOUR_DEVICE_TOKEN");
-auto device = Device(wifiCreds, deviceCreds);
-
-// ----------- CUSTOMIZABLE PART END -------------
+#include <EEPROM.h>
 
 // Pins to which the PMS7003 is connected to
 const uint8_t pmsTX = D5;
@@ -40,14 +33,29 @@ char* HUMIDITY_ASSET    = "humidity";
 char* PRESSURE_ASSET    = "pressure";
 char* INTERVAL_ASSET    = "interval";
 
-// Other variables
+// Other variables (don't touch if you don't know what you're doing)
 int readInterval = 15; // [MINUTES] Default device reporting time
 int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
+WifiCredentials wifiCreds = WifiCredentials("", "");
+DeviceConfig deviceCreds = DeviceConfig("", "");
+Device device = Device(wifiCreds, deviceCreds);
 const char*   airQuality;
 unsigned long lastReadTime;
 unsigned long currentTime;
 bool firstReading = true;
 bool pmsWoken = false;
+String wifiName, wifiPassword, deviceId, deviceToken;
+int wifiName_EEPROM_begin = 0;
+int wifiName_EEPROM_end = 255;
+int wifiPassword_EEPROM_begin = 256;
+int wifiPassword_EEPROM_end = 511;
+int deviceId_EEPROM_begin = 512;
+int deviceId_EEPROM_end = 767;
+int deviceToken_EEPROM_begin = 768;
+int deviceToken_EEPROM_end = 1024;
+int EEPROMsize = 1024;
+String dataDivider = ";";
+int deviceRestartWait = 5; // Seconds
 
 // Sensor initialization
 Adafruit_BME280 bme;
@@ -62,8 +70,19 @@ void setup() {
   pmsSerial.begin(9600);
   pms.passiveMode();
   bme.begin(0x76);
-  Serial.println();
-  Serial.println("Project 'KLIMERKO' - https://github.com/DesconBelgrade/Klimerko");
+  Serial.println("");
+  Serial.println("");
+  Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
+  Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
+  Serial.println("|                       www.vazduhgradjanima.rs                           |");
+  Serial.println("|                        Firmware Version: 1.1                            |");
+  Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
+  Serial.println(" -------------------------------------------------------------------------");
+  getCredentials();
+  while(millis() < 10000) {
+    configureCredentials();
+  }
+  credentialsSDK();
   device.debugPort(Serial);
   device.wifiSignalReporting(true);
   device.connectionLed(true);
@@ -140,24 +159,23 @@ void readPMS() {
 
 
     // Assign a text value of how good the air is
-    if (PM2_5 <= 12) {
+    if (PM10 <= 25) {
+      airQuality = "Excellent";
+    } else if (PM10 >= 26 && PM10 <= 35) {
       airQuality = "Good";
-    } else if (PM2_5 >= 13 && PM2_5 <= 35) {
-      airQuality = "Moderate";
-    } else if (PM2_5 >= 36 && PM2_5 <= 55) {
-      airQuality = "Poor";
-    } else if (PM2_5 >= 56 && PM2_5 <= 150) {
-      airQuality = "Unhealthy";
-    } else if (PM2_5 >= 151 && PM2_5 <= 250) {
-      airQuality = "Very Unhealthy";
-    } else if (PM2_5 > 250) {
-      airQuality = "Hazardous";
+    } else if (PM10 >= 36 && PM10 <= 50) {
+      airQuality = "Acceptable";
+    } else if (PM10 >= 51 && PM10 <= 75) {
+      airQuality = "Polluted";
+    } else if (PM10 > 76) {
+      airQuality = "Very Polluted";
     }
 
     // Print via SERIAL
     Serial.println("----------PMS7003-----------");
     Serial.print("Air Quality is ");
-    Serial.println(airQuality);
+    Serial.print(airQuality);
+    Serial.println(", based on PM 10 value");
     Serial.print("PM 1.0 (ug/m3):  ");
     Serial.println(PM1);
     Serial.print("PM 2.5 (ug/m3):  ");
@@ -204,7 +222,191 @@ void publishInterval() {
   device.send(INTERVAL_ASSET, readInterval);
 }
 
+void getCredentials() {
+  //Serial.println("System: Loading your credentials...");
+  EEPROM.begin(EEPROMsize);
+  wifiName = readData(wifiName_EEPROM_begin, wifiName_EEPROM_end);
+  wifiPassword = readData(wifiPassword_EEPROM_begin, wifiPassword_EEPROM_end);
+  deviceId = readData(deviceId_EEPROM_begin, deviceId_EEPROM_end);
+  deviceToken = readData(deviceToken_EEPROM_begin, deviceToken_EEPROM_end);
+  EEPROM.end();
+//  Serial.print("WiFi Name: ");
+//  Serial.println(wifiName);
+//  Serial.print("WiFi Password: ");
+//  Serial.println(wifiPassword);
+//  Serial.print("ATT Device ID: ");
+//  Serial.println(deviceId);
+//  Serial.print("ATT Device Token: ");
+//  Serial.println(deviceToken);
+}
+
+String readData(int startAddress, int endAddress) {
+  String output;
+  for (int i = startAddress; i < endAddress; ++i) {
+    if (char(EEPROM.read(i)) != ';') {
+      output += String(char(EEPROM.read(i)));
+    } else {
+      i = endAddress;
+    }
+  }
+  return output;
+}
+
+// Convert credentials for SDK
+void credentialsSDK() {
+  char *wifiNameChar, *wifiPasswordChar, *deviceIdChar, *deviceTokenChar;
+  wifiNameChar = (char*)malloc(wifiName.length()+1);
+  wifiPasswordChar = (char*)malloc(wifiPassword.length()+1);
+  deviceIdChar = (char*)malloc(deviceId.length()+1);
+  deviceTokenChar = (char*)malloc(deviceToken.length()+1);
+  
+  wifiName.toCharArray(wifiNameChar, wifiName.length()+1);
+  wifiPassword.toCharArray(wifiPasswordChar, wifiPassword.length()+1);
+  deviceId.toCharArray(deviceIdChar, deviceId.length()+1);
+  deviceToken.toCharArray(deviceTokenChar, deviceToken.length()+1);
+  
+  wifiCreds = WifiCredentials(wifiNameChar, wifiPasswordChar);
+  deviceCreds = DeviceConfig(deviceIdChar, deviceTokenChar);
+  device = Device(wifiCreds, deviceCreds);
+}
+
+// Main function
+void configureCredentials() {
+  if (Serial.available() >= 1) {
+    if (Serial.readString() == "config\n") {
+      Serial.println("");
+      Serial.println("----------------------CREDENTIALS CONFIGURATION MODE----------------------");
+      Serial.println("            To only change WiFi Credentials, enter 'wifi'");
+      Serial.println("         To only change AllThingsTalk Credentials, enter 'att'");
+      Serial.println("                    To change both, enter 'all'");
+      Serial.println("     Enter anything else to exit Credentials configuration mode...");
+      Serial.println("--------------------------------------------------------------------------");
+      delay(1000);
+
+      while (Serial.available()==0) {}
+      String input = Serial.readString();
+      if (input == "wifi\n") {
+        wifiName = newCredentials("Enter your new WiFi Name (SSID)");
+        wifiPassword = newCredentials("Enter your new WiFi Password");
+        promptSave(input);
+      } else if (input == "att\n") {
+        deviceId = newCredentials("Enter your new Device ID");
+        deviceToken = newCredentials("Enter your new Device Token");
+        promptSave(input);
+      } else if (input == "all\n") {
+        wifiName = newCredentials("Enter your new WiFi Name (SSID)");
+        wifiPassword = newCredentials("Enter your new WiFi Password");
+        deviceId = newCredentials("Enter your new Device ID");
+        deviceToken = newCredentials("Enter your new Device Token");
+        promptSave(input);
+      } else {
+        Serial.println("System: Exited Credentials Configuration Mode");
+      }
+    } else {
+      Serial.println("Command not recognized. If you wish to configure your device, enter 'config'");
+    }
+  }
+}
+
+String newCredentials(String inputMessage) {
+  Serial.print(inputMessage);
+  Serial.print(": ");
+  while (Serial.available()==0) {}
+  String inputData = Serial.readString();
+  inputData.trim();
+  Serial.println(inputData);
+  if (inputData.length() >= 255) {
+    Serial.println("System ERROR: Your credentials are too long! Maximum is 255");
+    restartDevice();
+  } else if (inputData.indexOf(";") != -1) {
+    Serial.print("System ERROR: Your credentials can't contain the '");
+    Serial.print(dataDivider);
+    Serial.println("' character");
+    restartDevice();
+  } else {
+    return inputData;
+  }
+}
+
+void promptSave(String input) {
+  Serial.println("System: Save this configuration? Enter 'yes' to save and restart the device. Enter anything else to cancel.");
+  while (Serial.available()==0) {}
+  if (Serial.readString() == "yes\n") {
+    Serial.println("System: New credentials are being saved.");
+    saveCredentials(input);
+    restartDevice();
+  } else {
+    Serial.println("System: New credentials will NOT be saved. Normal operation resumed.");
+  }
+}
+
+void saveCredentials(String whatToSave) {
+  EEPROM.begin(EEPROMsize);
+  
+  if (whatToSave == "wifi\n") {
+    formatMemory(wifiName_EEPROM_begin, wifiPassword_EEPROM_end);
+    writeData(wifiName, wifiName_EEPROM_begin);
+    writeData(wifiPassword, wifiPassword_EEPROM_begin);
+  }
+  
+  if (whatToSave == "att\n") {
+    formatMemory(deviceId_EEPROM_begin, deviceToken_EEPROM_end);
+    writeData(deviceId, deviceId_EEPROM_begin);
+    writeData(deviceToken, deviceToken_EEPROM_begin);
+  }
+
+  if (whatToSave == "all\n") {
+    formatMemory(wifiName_EEPROM_begin, deviceToken_EEPROM_end);
+    writeData(wifiName, wifiName_EEPROM_begin);
+    writeData(wifiPassword, wifiPassword_EEPROM_begin);
+    writeData(deviceId, deviceId_EEPROM_begin);
+    writeData(deviceToken, deviceToken_EEPROM_begin);
+  }
+
+  if (EEPROM.commit()) {
+    Serial.println("System: Data saved.");
+    EEPROM.end();
+  } else {
+    Serial.println("System Error: Data couldn't be saved.");
+  }
+}
+
+void writeData(String data, int startAddress) {
+//  Serial.print("MEMORY: Writing '");
+//  Serial.print(data);
+//  Serial.print("' (which is ");
+//  Serial.print(data.length());
+//  Serial.print(" bytes) from address ");
+//  Serial.print(startAddress);
+//  Serial.print(" so it ends at address ");
+//  Serial.println(data.length() + startAddress);
+  data = data+dataDivider;
+  int characterNum = 0;
+  for (int i = startAddress; i < (startAddress + data.length()); i++) {
+    EEPROM.write(i, data[characterNum]);
+    characterNum++;
+  }
+}
+
+void formatMemory(int startAddress, int endAddress) {
+    for (int i=startAddress; i < endAddress; i++) {
+      EEPROM.write(i, ';');
+    }
+}
+
+void restartDevice() {
+  Serial.print("System: Restarting Klimerko in ");
+  Serial.print(deviceRestartWait);
+  Serial.print(" seconds");
+  for (int i = 0; i < deviceRestartWait; i++) {
+    Serial.print(".");
+    delay(1000);
+  }
+  ESP.restart();
+}
+
 void loop() {
   device.loop(); // Keep the connection to AllThingsTalk alive
   readSensors(); // Read data from sensors
+  configureCredentials(); // Enable credentials configuration from serial interface
 }
