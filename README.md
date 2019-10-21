@@ -1,10 +1,27 @@
 
-# Build your “Klimerko” Air Quality Monitoring Station
+# “Klimerko” Air Quality Monitoring Station
 
-![Klimerko Tile](extras/klimerko-tile.png)
+<img align="right" width="200" height="200" src="extras/klimerko-tile.png">
+
+"Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
+
+See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](vazduhgradjanima.rs)
+
+This is a DIY air quality measuring device that costs about $30 to build (even less without the 3D Case) and measures [Particulate Matter](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics) in the air as well as Temperature, Humidity and Pressure.  
+Read on to find out how to build your own!
+
+
+### Firmware Version History
+| Version | Changelog |
+|--|--|
+| v1.1 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials), updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
+| v1 | The initial firmware written for Descon 5.0 (2019) workshop |
+
 
 # Parts
+This diagram shows an overview of how Klimerko works
 ![Klimerko Diagram](extras/klimerko-diagram.png)
+
 ## Hardware Required
 
 > In case you're not following this guide at a workshop: 
@@ -36,6 +53,7 @@ You’re going to need the following tools at minimum to complete the project:
 - Solder
 - Scissors or a Wire Stripper
 - Screwdriver
+
 
 
 # Hardware Assembly
@@ -175,14 +193,15 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 > Note: There’s a blue LED light on the device that automatically starts “breathing/fading” when a connection to either WiFi or AllThingsTalk is being established or is dropped. If the LED isn’t “breathing/fading” (if it’s off), the device should be connected successfully and uploading data.
 
 
-# Cloud Platform (Again)
+# Cloud Platform (Final)
 
-All of the data from your Klimerko is available on your AllThingsTalk Maker. 
-Other than raw actual and historical air quality values, you’re able to see your air quality in a textual form at a glance, see the WiFi Signal Strength of your Klimerko and control how often your Klimerko publishes data. You’ll also get notifications if your Klimerko goes offline for any reason.
+All of the data from your Klimerko is available on your AllThingsTalk Maker.  
+Other than raw actual and historical air quality values, you’re able to see your air quality in a textual form at a glance, see the WiFi Signal Strength of your Klimerko and control how often your Klimerko publishes data.  
+You’ll also get notifications if your Klimerko goes offline for any reason.
 
 ### Configure Device
 
-Open [AllThingsTalk Maker](https://maker.allthingstalk.com), go to “Devices” and select your new “Descon Klimerko” device. 
+Open [AllThingsTalk Maker](https://maker.allthingstalk.com), go to “Devices” and select your new “Descon Klimerko” device.  
 You’ll see all assets of your device (stuff that it can report and things you can control).
 
 > Make sure to keep the data (that you’re about to set below) updated if you move your device
@@ -205,7 +224,8 @@ Go to your “Decon Klimerko” device, click “Settings” in the upper right 
 
 ### Visualize Data
 
-Now go to “Pinboards” on the left side of AllThingsTalk Maker. You should see a new pinboard named “Klimerko”. Select it if it isn’t already selected.
+Now go to “Pinboards” on the left side of AllThingsTalk Maker.  
+You should see a new pinboard named “Klimerko”. Select it if it isn’t already selected.  
 All data from your Klimerko is visualized here:
 
 - Air Quality (in textual form)
@@ -231,10 +251,5 @@ All data from your Klimerko is visualized here:
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
 You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](http://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
-
-    
-
-
-
 
 
