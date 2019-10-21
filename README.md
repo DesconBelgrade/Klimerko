@@ -50,10 +50,12 @@ If you wish to wall-mount the device, use 2 screws to mount the holder to a wall
 For now, disassemble the case and put away all the parts except for the components base, where you’ll be placing all the components.
 
 ## PMS7003 Sensor Preparation
+
 - First, make sure **not** to remove the blue plastic cover from the PMS7003 sensor as it helps it fit into the 3D case better.
-- Place the PMS7003 sensor into the components base of the 3D case with the connection port of PMS7003 facing outwards in upper right side.
-- Plug in the connector cable into the bridge board.
-- Because we don’t need excess cabling, removal of the unnecessary wires from the connector cable is suggested. In order to know which wires to pull, make sure the connector cable is plugged into the bridge board so that you can see the markings on the board that correspond to the wires. To remove the wires, pull them with medium force until they’re detached from the connector. 
+- Place the PMS7003 sensor into the components base of the 3D case with the connection port of PMS7003 facing outwards in upper right side.  
+- Plug in the connector cable into the bridge board.  
+- Because we don’t need excess cabling, removal of the unnecessary wires from the connector cable is suggested. In order to know which wires to pull, make sure the connector cable is plugged into the bridge board so that you can see the markings on the board that correspond to the wires. To remove the wires, pull them with medium force until they’re detached from the connector.
+
 ![Bridge Board Wire Removal](extras/bridge-board-wire-removal.png)
 
     These are the wires to pull (marked red):
@@ -62,6 +64,7 @@ For now, disassemble the case and put away all the parts except for the componen
     - **RST**
     - **SET**
     The only wires left attached should be **TX**, **RX**, **GND** and **VCC**.
+    
 - Measure ~13cm of all 4 remaining wires from the connector cable and cut the rest, so you’re left with the connector at one end and cut wires on the other.
 - Using scissors or a wire stripper, remove the insulation ~2mm from the end of each wire, so you’re left with clear copper at the ends.
 - Plug the bridge board (with the connector cable in) into the PMS7003 Sensor.
@@ -104,12 +107,12 @@ You should now have 8 wires coming through the circular hole leading to the Node
 
 - Now use 4 screws to place the NodeMCU in its spot in the components base of the 3D case.
 - Double check all the connections and if everything is as it should be.
-- Put the weather-resistant cover of the 3D case over the components base
+- Put the weather-resistant cover of the 3D case over the components base (it's better to do this once everything is done and device is connected, though)
 
 Congratulations, you’ve assembled the device! Now onto the software side.
 
 
-# Cloud Platform
+# Cloud Platform (Credentials)
 - Head over to https://maker.allthingstalk.com/signup and create an account
     
 ![Cloud Signup](extras/cloud-signup.png)
@@ -142,6 +145,8 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 
 
 # Software
+
+## Uploading Firmware
 - Download and install https://www.arduino.cc/en/Main/software (choose “Windows installer, for Windows XP and up” if you’re on Windows)
     If you already have Arduino IDE, make sure it’s at least version 1.8.10
 - Open Arduino IDE
@@ -158,7 +163,9 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 - Go to *Tools* > *Upload Speed* and choose *115200*
 - Go to *Tools* > *Port* and you should see a single port there. Select it.
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
-- Once done, go to “Tools” > “Serial Monitor” and press the “RST” button on the NodeMCU
+
+## Configuring Device Credentials
+- Once you've uploaded the firmware, go to “Tools” > “Serial Monitor” and press the “RST” button on the NodeMCU
 - When you see “Write 'config' to configure your credentials (expires in 10 seconds)”, enter “config” in the upper part of Serial Monitor and press ENTER
 - Now enter “all” in the Serial Monitor input and press ENTER
 - Now enter your WiFi Network Name, WiFi Password and the Device ID and Device Token for communication with AllThingsTalk (noted earlier)
@@ -170,12 +177,13 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 > Note: There’s a blue LED light on the device that automatically starts “breathing/fading” when a connection to either WiFi or AllThingsTalk is being established or is dropped. If the LED isn’t “breathing/fading” (if it’s off), the device should be connected successfully and uploading data.
 
 
-## Cloud Platform
+# Cloud Platform (Again)
 
 All of the data from your Klimerko is available on your AllThingsTalk Maker. 
 Other than raw actual and historical air quality values, you’re able to see your air quality in a textual form at a glance, see the WiFi Signal Strength of your Klimerko and control how often your Klimerko publishes data. You’ll also get notifications if your Klimerko goes offline for any reason.
 
-**Configure Device**
+### Configure Device
+
 Open [AllThingsTalk Maker](https://maker.allthingstalk.com), go to “Devices” and select your new “Descon Klimerko” device. 
 You’ll see all assets of your device (stuff that it can report and things you can control).
 
@@ -191,10 +199,14 @@ You’ll see all assets of your device (stuff that it can report and things you 
 ```
 This needs to be done since air pollution readings are different on different heights.
 
-**Share Data**
+
+### Share Data
+
 Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”
 
-**Pinboards**
+
+### Visualize Data
+
 Now go to “Pinboards” on the left side of AllThingsTalk Maker. You should see a new pinboard named “Klimerko”. Select it if it isn’t already selected.
 All data from your Klimerko is visualized here:
 
