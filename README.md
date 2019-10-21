@@ -73,13 +73,14 @@ For now, disassemble the case and put away all the parts except for the componen
 - Place the PMS7003 sensor into the components base of the 3D case with the connection port of PMS7003 facing outwards in upper right side.  
 - Plug in the connector cable into the bridge board.  
 - Because we don’t need excess cabling, removal of the unnecessary wires from the connector cable is suggested. In order to know which wires to pull, make sure the connector cable is plugged into the bridge board so that you can see the markings on the board that correspond to the wires. To remove the wires, pull them with medium force until they’re detached from the connector. 
-<img align="right" width="337" height="252" src="extras/bridge-board-wire-removal.png">
 These are the wires to pull (marked red):
     - **NC** (first one)
     - **NC** (second one)
     - **RST**
     - **SET**
     The only wires left attached should be **TX**, **RX**, **GND** and **VCC**.
+
+![Bridge Board Wire Removal](extras/bridge-board-wire-removal.png)
     
 - Measure ~13cm of all 4 remaining wires from the connector cable and cut the rest, so you’re left with the connector at one end and cut wires on the other.
 - Using scissors or a wire stripper, remove the insulation ~2mm from the end of each wire, so you’re left with clear copper at the ends.
@@ -199,7 +200,7 @@ All of the data from your Klimerko is available on your AllThingsTalk Maker.
 Other than raw actual and historical air quality values, you’re able to see your air quality in a textual form at a glance, see the WiFi Signal Strength of your Klimerko and control how often your Klimerko publishes data.  
 You’ll also get notifications if your Klimerko goes offline for any reason.
 
-### Configure Device
+## Configure Device
 
 Open [AllThingsTalk Maker](https://maker.allthingstalk.com), go to “Devices” and select your new “Descon Klimerko” device.  
 You’ll see all assets of your device (stuff that it can report and things you can control).
@@ -217,19 +218,19 @@ You’ll see all assets of your device (stuff that it can report and things you 
 This needs to be done since air pollution readings are different on different heights.
 
 
-### Share Data
+## Share Data
 
 Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”
 
 
-### Visualize Data
+## Visualize Data
 
 Now go to “Pinboards” on the left side of AllThingsTalk Maker.  
 You should see a new pinboard named “Klimerko”. Select it if it isn’t already selected.  
 All data from your Klimerko is visualized here:
 
-- Air Quality (in textual form)
-    Value shown will also have a corresponding background color.
+- Air Quality (in textual form)  
+    Value shown will also have a corresponding background color.  
     This value is derived from PM10 values (as per regulations of Republic of Serbia):
     
 | Textual Value | PM 10 Value |
@@ -243,11 +244,11 @@ All data from your Klimerko is visualized here:
 - Actual PM1, PM2.5, PM10, Temperature, Humidity and Pressure data
 - Historical PM1, PM2.5, PM10, Temperature, Humidity and Pressure data
 - Location of your device on the map (that you’ve set)
-- WiFi Signal Strength of your Klimerko device
-    Possible values (from good to bad): Excellent, Good, Decent, Bad, Horrible.
+- WiFi Signal Strength of your Klimerko device  
+    Possible values (from good to bad): Excellent, Good, Decent, Bad, Horrible.  
     The values shown will also have a corresponding background color.
 - Device height (that you’ve set)
-- Device reporting interval (minutes)
+- Device reporting interval (minutes)  
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
 You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](http://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
