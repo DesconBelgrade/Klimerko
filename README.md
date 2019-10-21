@@ -5,7 +5,7 @@
 
 "Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
 
-See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](vazduhgradjanima.rs)
+See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](http://vazduhgradjanima.rs)
 
 This is a DIY air quality measuring device that costs about $30 to build (even less without the 3D Case) and measures [Particulate Matter](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics) in the air as well as Temperature, Humidity and Pressure.  
 Read on to find out how to build your own!
