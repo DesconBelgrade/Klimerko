@@ -1,7 +1,7 @@
 
 # “Klimerko” Air Quality Monitoring Station
 
-<img align="right" width="200" height="200" src="extras/klimerko-tile.png">
+<img align="right" width="300" height="200" src="extras/klimerko-tile.png">
 
 "Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
 
