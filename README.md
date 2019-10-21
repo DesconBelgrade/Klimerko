@@ -55,15 +55,14 @@ For now, disassemble the case and put away all the parts except for the componen
 - Place the PMS7003 sensor into the components base of the 3D case with the connection port of PMS7003 facing outwards in upper right side.  
 - Plug in the connector cable into the bridge board.  
 - Because we don’t need excess cabling, removal of the unnecessary wires from the connector cable is suggested. In order to know which wires to pull, make sure the connector cable is plugged into the bridge board so that you can see the markings on the board that correspond to the wires. To remove the wires, pull them with medium force until they’re detached from the connector.
-
-![Bridge Board Wire Removal](extras/bridge-board-wire-removal.png)
-
-    These are the wires to pull (marked red):
+These are the wires to pull (marked red):
     - **NC** (first one)
     - **NC** (second one)
     - **RST**
     - **SET**
     The only wires left attached should be **TX**, **RX**, **GND** and **VCC**.
+
+![Bridge Board Wire Removal](extras/bridge-board-wire-removal.png)
     
 - Measure ~13cm of all 4 remaining wires from the connector cable and cut the rest, so you’re left with the connector at one end and cut wires on the other.
 - Using scissors or a wire stripper, remove the insulation ~2mm from the end of each wire, so you’re left with clear copper at the ends.
