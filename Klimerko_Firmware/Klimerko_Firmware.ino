@@ -1,5 +1,8 @@
 /*  This is taken from https://github.com/DesconBelgrade/Klimerko
  *  Please head over there to read more about the project.
+ *  Do not change anything in here unless you know what you're doing.
+ *  To configure your WiFi and Cloud credentials, open Serial Monitor,
+ *  restart the device, write "config" in Serial Monitor and follow the instructions
  * 
  *  --------------- Project "KLIMERKO" ---------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
