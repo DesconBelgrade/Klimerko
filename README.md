@@ -1,11 +1,12 @@
 
+
 # “Klimerko” Air Quality Monitoring Station
 
 <img align="right" width="300" height="200" src="extras/klimerko-tile.png">
 
 "Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
 
-See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](http://vazduhgradjanima.rs)
+See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](https://vazduhgradjanima.rs)
 
 This is a DIY air quality measuring device that costs about $30 to build (even less without the 3D Case) and measures [Particulate Matter](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics) in the air as well as Temperature, Humidity and Pressure.  
 Read on to find out how to build your own!
@@ -16,7 +17,6 @@ Read on to find out how to build your own!
 |--|--|
 | v1.1 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials), updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
 | v1 | The initial firmware written for Descon 5.0 (2019) workshop |
-
 
 # Table of Contents
 This guide is in chronological order, so try not to skip through parts if you're not sure about it :)
@@ -79,7 +79,10 @@ You’re going to need the following tools at minimum to complete the project:
 
 # Hardware Assembly
 
-Once you’ve got all the components and tools ready, it’s time to begin the assembly process.
+Once you’ve got all the components and tools ready, it’s time to begin the assembly process.  
+  
+When soldering, make sure that there's no solder between any two pins (connection holes in the board) on any of the components **before** plugging the device into a power source.  
+**Pay attention to VIN and GND** pins on the NodeMCU, because shorting (connecting) those two pins together **will fry** NodeMCU and possibly the power source it's connected to.
 
 ## 3D Case Preparation
 
@@ -155,9 +158,6 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 
 # Cloud Platform (Credentials)
 - Head over to https://maker.allthingstalk.com/signup and create an account
-    
-![Cloud Signup](extras/cloud-signup.png)
-
 - Sign in
 - Click “Playground”
     
@@ -257,7 +257,7 @@ This needs to be done since air pollution readings are different on different he
 ## Share Data
 
 Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”.  
-Your device will now be visible on the map at [vazduhgradjanima.rs](www.vazduhgradjanima.rs) and can help the community be aware of the air quality!  
+Your device will now be visible on the map at [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and can help the community be aware of the air quality!  
 
 ![Cloud Map](extras/cloud-map.png) 
 
@@ -290,7 +290,7 @@ All data from your Klimerko is visualized here:
 - Device reporting interval (minutes)  
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
-You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](www.vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
+You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
 
 # Problems & Fixes
@@ -301,7 +301,7 @@ You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](ww
 - If your device is showing unintelligible text in Serial Monitor:
 	- Make sure your Serial Monitor is set to baud rate of 115200 (set this in the bottom right corner of Serial Monitor)
 - If your device won't connect to WiFi or AllThingsTalk
-	- Make sure your credentials are correct. Check if you copied the [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure the credentials to make sure.](#configuring-device-credentials)
+	- Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-device-credentials)
 	- Make sure Klimerko is not too far away from your Router
 	- Make sure your Router has internet access
 - If your device is connected, but the sensor data you're seeing on AllThingsTalk is "0":
@@ -309,6 +309,6 @@ You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](ww
 	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device.
 	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
 - If it seems your device won't turn on:
-	- The NodeMCU has a blue LED right above the shiny metallic box. That LED blinks for a short moment when the device is plugged into power. If yours doesn't blink when plugged in, check the cable (and try another one if you have it). Also check the power supply (the adapter)
+	- The NodeMCU has a blue LED right above the small shiny metallic box. That LED blinks for a brief moment right when you plug the device into power. If yours doesn't blink when you plug it in, check the USB cable (and try another one if you have it). If that makes no difference, check the power supply (the adapter).
 	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 
 	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
