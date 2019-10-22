@@ -18,16 +18,37 @@ Read on to find out how to build your own!
 | v1 | The initial firmware written for Descon 5.0 (2019) workshop |
 
 
+# Table of Contents
+This guide is in chronological order, so try not to skip through parts if you're not sure about it :)
+
+* [Parts](#parts)
+  * [Hardware Required](#hardware-required)
+  * [Tools Required](#tools-required)
+* [Hardware Assembly](#hardware-assembly)
+  * [3D Case Preparation](#3d-case-preparation)
+  * [PMS7003 Sensor Preparation](#pms7003-sensor-preparation)
+  * [BME280 Sensor Preparation](#bme280-sensor-preparation)
+  * [NodeMCU Preparation](#nodemcu-preparation)
+* [Cloud Platform (Credentials)](#cloud-platform-credentials)
+* [Software](#software)
+  * [Installing ESP8266 Support](#installing-esp8266-support)
+  * [Uploading Firmware](#uploading-firmware)
+  * [Configuring Device Credentials](#configuring-device-credentials)
+* [Cloud Platform (Final)](#cloud-platform-final)
+  * [Configure Device](#configure-device)
+  * [Share Data](#share-data)
+  * [Visualize Data](#visualize-data)
+* [Problems & Fixes](#problems--fixes)
+
+
 # Parts
 This diagram shows an overview of how Klimerko works
 ![Klimerko Diagram](extras/klimerko-diagram.png)
 
 ## Hardware Required
 
-> In case you're not following this guide at a workshop: 
-> You're still able to build this device if you don't have the 3D case. You'll just need to tinker and figure out how to place the device in a secure location away from rain/sun (but in an open space so it can detect pollution properly) 
-
-You need to have the following components to follow this guide:
+You'll need these components to follow this guide.
+Some items are clickable and you can buy them right away.
 
 - [NodeMCU](https://www.aliexpress.com/item/33053690164.html) Board (with CP2102 chip)
 - [Plantower PMS7003](https://www.aliexpress.com/item/32623909733.html) Air Quality Sensor
@@ -36,7 +57,7 @@ You need to have the following components to follow this guide:
 - [Bosch BME280](https://www.aliexpress.com/item/32961882719.html) Temperature/Humidity/Pressure Sensor
 - USB Power adapter (5V, minimum 250mA)
 - MicroUSB Cable (5m preferred)
-- 3D printed case for the device, which comprises of:
+- ***Optional:*** 3D printed case for the device, which comprises of:
     - Components base
     - Weather-resistant cover
     - Flat stand
@@ -61,6 +82,9 @@ You’re going to need the following tools at minimum to complete the project:
 Once you’ve got all the components and tools ready, it’s time to begin the assembly process.
 
 ## 3D Case Preparation
+
+> In case you're not following this guide at a workshop: 
+> You're still able to build this device if you don't have the 3D case. You'll just need to tinker and figure out how to place the device in a secure location away from rain/sun (but in an open space so it can detect pollution properly) 
 
 Depending on your use case, you can use either the flat stand or the wall-mounted holder.
 If you wish to wall-mount the device, use 2 screws to mount the holder to a wall. You’ll be able to easily attach and detach the device from the wall.
@@ -162,16 +186,25 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 
 
 # Software
+For all of the steps below, you'll need Arduino IDE (Integrated Development Environment).  This is a tool that's used to send the "firmware" or "program" to your device.  
 
-## Uploading Firmware
-- Download and install https://www.arduino.cc/en/Main/software (choose “Windows installer, for Windows XP and up” if you’re on Windows)
-    If you already have Arduino IDE, make sure it’s at least version 1.8.10
+**If you already have Arduino IDE, make sure it's at least version 1.8.10**
+
+Download and install https://www.arduino.cc/en/Main/software 
+(choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues)
+
+## Installing ESP8266 Support
+ESP8266 is the "brains" or "processor" of the NodeMCU, but Arduino IDE doesn't support it out-of-the-box. That's an easy one:
 - Open Arduino IDE
 - Go to *File* > *Preferences*
 - In the *Additional Boards Manager URLs*, enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` and click *OK*
 - Go to *Tools* > *Board* > *Boards Manager*
 - Search for and install “*esp8266*” by *ESP8266 Community*
 - Once done, close Arduino IDE
+
+## Upload Firmware
+Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to do by uploading the program to it:
+
 - Plug in the USB cable into your Klimerko device and your computer
 - Download https://github.com/DesconBelgrade/Klimerko/archive/master.zip
 - Unzip the file, open it and go to “Klimerko_Firmware” folder
@@ -182,12 +215,15 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
 ## Configuring Device Credentials
-- Once you've uploaded the firmware, go to “Tools” > “Serial Monitor” and press the “RST” button on the NodeMCU
-- When you see “Write 'config' to configure your credentials (expires in 10 seconds)”, enter “config” in the upper part of Serial Monitor and press ENTER
+NodeMCU is now smart. It knows exactly what it needs to do, but it can't connect to the internet! Here's how you can tell it where to connect:
+
+- Once you've uploaded the firmware, go to “Tools” > “Serial Monitor” and in the bottom right corner choose "115200 baud"
+- Press the “RST” button on the NodeMCU
+- When you see “*Write 'config' to configure your credentials (expires in 10 seconds)*” in Serial monitor, enter “config” in the upper part of and press ENTER
 - Now enter “all” in the Serial Monitor input and press ENTER
-- Now enter your WiFi Network Name, WiFi Password and the Device ID and Device Token for communication with AllThingsTalk (noted earlier)
+- Enter your WiFi Network Name, WiFi Password and the Device ID and Device Token for communication with AllThingsTalk (noted earlier)
 - Your device will now restart. Wait for it to boot.
-> Use the Serial Monitor for diagnostic output from Klimerko. If you don’t see any data, restart Klimerko (either press the RST button on NodeMCU or unplug and plug it back it) because it’s currently not reading/publishing data, so there’s nothing to be shown.
+> Use the Serial Monitor for diagnostic output from Klimerko. If you don’t see any data, restart Klimerko (either press the RST button on NodeMCU or unplug and plug it back in) because it’s currently not reading/publishing data, so there’s nothing to be shown.
 - Once you see “Your device is up and running!” in Serial Monitor, you’re good to go!
 - Feel free to unplug the device from your computer and plug it into a wall USB Power adapter with your 5m USB cable. 
 
@@ -254,3 +290,22 @@ All data from your Klimerko is visualized here:
 You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](http://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
 
+# Problems & Fixes
+- If you're having compiling issues (orange errors in the bottom of Arduino IDE), make sure that:
+	- Your Arduino IDE is at least version **1.8.10**
+	- You've downloaded the latest firmware from https://github.com/DesconBelgrade/Klimerko/archive/master.zip
+	- You've selected the correct board and port as shown [here](#upload-firmware)
+- If your device is showing unintelligible text in Serial Monitor:
+	- Make sure your Serial Monitor is set to baud rate of 115200 (set this in the bottom right corner of Serial Monitor)
+- If your device won't connect to WiFi or AllThingsTalk
+	- Make sure your credentials are correct. Check if you copied the [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure the credentials to make sure.](#configuring-device-credentials)
+	- Make sure Klimerko is not too far away from your Router
+	- Make sure your Router has internet access
+- If your device is connected, but the sensor data you're seeing on AllThingsTalk is "0":
+	- [Check your wiring](#hardware-assembly) to make sure everything is connected properly.
+	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device.
+	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
+- If it seems your device won't turn on:
+	- The NodeMCU has a blue LED right above the shiny metallic box. That LED blinks for a short moment when the device is plugged into power. If yours doesn't blink when plugged in, check the cable (and try another one if you have it). Also check the power supply (the adapter)
+	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 
+	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
