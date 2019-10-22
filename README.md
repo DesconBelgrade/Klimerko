@@ -50,11 +50,11 @@ This diagram shows an overview of how Klimerko works
 You'll need these components to follow this guide.
 Some items are clickable and you can buy them right away.
 
-- [NodeMCU](https://www.aliexpress.com/item/33053690164.html) Board (with CP2102 chip)
-- [Plantower PMS7003](https://www.aliexpress.com/item/32623909733.html) Air Quality Sensor
+- [NodeMCU](https://www.aliexpress.com/item/33053690164.html) Board *(if buying, choose the "NodeMcu v3 CP2102")*
+- [Plantower PMS7003](https://www.aliexpress.com/item/32623909733.html) Air Quality Sensor *(if buying, get the one with Bridge Board and Connector Cable)*
     - Bridge board
     - Connector cable
-- [Bosch BME280](https://www.aliexpress.com/item/32961882719.html) Temperature/Humidity/Pressure Sensor
+- [Bosch BME280](https://www.aliexpress.com/item/32961882719.html) Temperature/Humidity/Pressure Sensor *(if buying, choose the "3.3V" one)*
 - USB Power adapter (5V, minimum 250mA)
 - MicroUSB Cable (5m preferred)
 - ***Optional:*** 3D printed case for the device, which comprises of:
