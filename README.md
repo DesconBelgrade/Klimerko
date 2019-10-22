@@ -256,7 +256,10 @@ This needs to be done since air pollution readings are different on different he
 
 ## Share Data
 
-Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”
+Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”.  
+Your device will now be visible on the map at [vazduhgradjanima.rs](www.vazduhgradjanima.rs) and can help the community be aware of the air quality!  
+
+![Cloud Map](extras/cloud-map.png) 
 
 
 ## Visualize Data
@@ -287,7 +290,7 @@ All data from your Klimerko is visualized here:
 - Device reporting interval (minutes)  
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
-You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](http://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
+You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](www.vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
 
 # Problems & Fixes
