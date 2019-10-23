@@ -276,7 +276,9 @@ void credentialsSDK() {
 // Main function
 void configureCredentials() {
   if (Serial.available() >= 1) {
-    if (Serial.readString() == "config\n") {
+    String cmd = Serial.readString();
+    cmd.trim();
+    if (cmd == "config") {
       Serial.println("");
       Serial.println("----------------------CREDENTIALS CONFIGURATION MODE----------------------");
       Serial.println("            To only change WiFi Credentials, enter 'wifi'");
@@ -288,15 +290,16 @@ void configureCredentials() {
 
       while (Serial.available()==0) {}
       String input = Serial.readString();
-      if (input == "wifi\n") {
+      input.trim();
+      if (input == "wifi") {
         wifiName = newCredentials("Enter your new WiFi Name (SSID)");
         wifiPassword = newCredentials("Enter your new WiFi Password");
         promptSave(input);
-      } else if (input == "att\n") {
+      } else if (input == "att") {
         deviceId = newCredentials("Enter your new Device ID");
         deviceToken = newCredentials("Enter your new Device Token");
         promptSave(input);
-      } else if (input == "all\n") {
+      } else if (input == "all") {
         wifiName = newCredentials("Enter your new WiFi Name (SSID)");
         wifiPassword = newCredentials("Enter your new WiFi Password");
         deviceId = newCredentials("Enter your new Device ID");
@@ -334,7 +337,9 @@ String newCredentials(String inputMessage) {
 void promptSave(String input) {
   Serial.println("System: Save this configuration? Enter 'yes' to save and restart the device. Enter anything else to cancel.");
   while (Serial.available()==0) {}
-  if (Serial.readString() == "yes\n") {
+  String confirm = Serial.readString();
+  confirm.trim();
+  if (confirm == "yes") {
     Serial.println("System: New credentials are being saved.");
     saveCredentials(input);
     restartDevice();
@@ -346,19 +351,19 @@ void promptSave(String input) {
 void saveCredentials(String whatToSave) {
   EEPROM.begin(EEPROMsize);
   
-  if (whatToSave == "wifi\n") {
+  if (whatToSave == "wifi") {
     formatMemory(wifiName_EEPROM_begin, wifiPassword_EEPROM_end);
     writeData(wifiName, wifiName_EEPROM_begin);
     writeData(wifiPassword, wifiPassword_EEPROM_begin);
   }
   
-  if (whatToSave == "att\n") {
+  if (whatToSave == "att") {
     formatMemory(deviceId_EEPROM_begin, deviceToken_EEPROM_end);
     writeData(deviceId, deviceId_EEPROM_begin);
     writeData(deviceToken, deviceToken_EEPROM_begin);
   }
 
-  if (whatToSave == "all\n") {
+  if (whatToSave == "all") {
     formatMemory(wifiName_EEPROM_begin, deviceToken_EEPROM_end);
     writeData(wifiName, wifiName_EEPROM_begin);
     writeData(wifiPassword, wifiPassword_EEPROM_begin);
