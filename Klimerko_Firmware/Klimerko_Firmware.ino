@@ -48,6 +48,7 @@ unsigned long currentTime;
 bool firstReading = true;
 bool pmsWoken = false;
 String wifiName, wifiPassword, deviceId, deviceToken;
+String wifiNameTemp, wifiPasswordTemp, deviceIdTemp, deviceTokenTemp;
 int wifiName_EEPROM_begin = 0;
 int wifiName_EEPROM_end = 255;
 int wifiPassword_EEPROM_begin = 256;
@@ -78,7 +79,7 @@ void setup() {
   Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                       Firmware Version: 1.1.1                           |");
+  Serial.println("|                       Firmware Version: 1.1.2                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -233,13 +234,13 @@ void getCredentials() {
   deviceId = readData(deviceId_EEPROM_begin, deviceId_EEPROM_end);
   deviceToken = readData(deviceToken_EEPROM_begin, deviceToken_EEPROM_end);
   EEPROM.end();
-//  Serial.print("WiFi Name: ");
+//  Serial.print("MEMORY: WiFi Name: ");
 //  Serial.println(wifiName);
-//  Serial.print("WiFi Password: ");
+//  Serial.print("MEMORY: WiFi Password: ");
 //  Serial.println(wifiPassword);
-//  Serial.print("ATT Device ID: ");
+//  Serial.print("MEMORY: ATT Device ID: ");
 //  Serial.println(deviceId);
-//  Serial.print("ATT Device Token: ");
+//  Serial.print("MEMORY: ATT Device Token: ");
 //  Serial.println(deviceToken);
 }
 
@@ -292,18 +293,18 @@ void configureCredentials() {
       String input = Serial.readString();
       input.trim();
       if (input == "wifi") {
-        wifiName = newCredentials("Enter your new WiFi Name (SSID)");
-        wifiPassword = newCredentials("Enter your new WiFi Password");
+        wifiNameTemp = newCredentials("Enter your new WiFi Name (SSID)");
+        wifiPasswordTemp = newCredentials("Enter your new WiFi Password");
         promptSave(input);
       } else if (input == "att") {
-        deviceId = newCredentials("Enter your new Device ID");
-        deviceToken = newCredentials("Enter your new Device Token");
+        deviceIdTemp = newCredentials("Enter your new Device ID");
+        deviceTokenTemp = newCredentials("Enter your new Device Token");
         promptSave(input);
       } else if (input == "all") {
-        wifiName = newCredentials("Enter your new WiFi Name (SSID)");
-        wifiPassword = newCredentials("Enter your new WiFi Password");
-        deviceId = newCredentials("Enter your new Device ID");
-        deviceToken = newCredentials("Enter your new Device Token");
+        wifiNameTemp = newCredentials("Enter your new WiFi Name (SSID)");
+        wifiPasswordTemp = newCredentials("Enter your new WiFi Password");
+        deviceIdTemp = newCredentials("Enter your new Device ID");
+        deviceTokenTemp = newCredentials("Enter your new Device Token");
         promptSave(input);
       } else {
         Serial.println("System: Exited Credentials Configuration Mode");
@@ -354,22 +355,22 @@ void saveCredentials(String whatToSave) {
   
   if (whatToSave == "wifi") {
     formatMemory(wifiName_EEPROM_begin, wifiPassword_EEPROM_end);
-    writeData(wifiName, wifiName_EEPROM_begin);
-    writeData(wifiPassword, wifiPassword_EEPROM_begin);
+    writeData(wifiNameTemp, wifiName_EEPROM_begin);
+    writeData(wifiPasswordTemp, wifiPassword_EEPROM_begin);
   }
   
   if (whatToSave == "att") {
     formatMemory(deviceId_EEPROM_begin, deviceToken_EEPROM_end);
-    writeData(deviceId, deviceId_EEPROM_begin);
-    writeData(deviceToken, deviceToken_EEPROM_begin);
+    writeData(deviceIdTemp, deviceId_EEPROM_begin);
+    writeData(deviceTokenTemp, deviceToken_EEPROM_begin);
   }
 
   if (whatToSave == "all") {
     formatMemory(wifiName_EEPROM_begin, deviceToken_EEPROM_end);
-    writeData(wifiName, wifiName_EEPROM_begin);
-    writeData(wifiPassword, wifiPassword_EEPROM_begin);
-    writeData(deviceId, deviceId_EEPROM_begin);
-    writeData(deviceToken, deviceToken_EEPROM_begin);
+    writeData(wifiNameTemp, wifiName_EEPROM_begin);
+    writeData(wifiPasswordTemp, wifiPassword_EEPROM_begin);
+    writeData(deviceIdTemp, deviceId_EEPROM_begin);
+    writeData(deviceTokenTemp, deviceToken_EEPROM_begin);
   }
 
   if (EEPROM.commit()) {
