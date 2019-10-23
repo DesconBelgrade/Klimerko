@@ -16,6 +16,7 @@ Read on to find out how to build your own!
 ### Firmware Version History
 | Version | Changelog |
 |--|--|
+| v1.1.1 | Fixed configuring credentials on Linux |
 | v1.1 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials), updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
 | v1 | The initial firmware written for Descon 5.0 (2019) workshop |
 
