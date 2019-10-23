@@ -14,11 +14,12 @@ Read on to find out how to build your own!
 
 
 ### Firmware Version History
-| Version | Changelog |
+| Version | Date | Notes |
 |--|--|
-| v1.1.1 | Fixed configuring credentials on Linux |
-| v1.1 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials), updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
-| v1 | The initial firmware written for Descon 5.0 (2019) workshop |
+| v1.1.2 | 23.10.2019 | Fixed issue where quitting device credentials dialog would still save changes for that session |
+| v1.1.1 | 23.10.2019 | Fixed configuring credentials on Linux |
+| v1.1 | 20.10.2019 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials), updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
+| v1 | 3.10.2019 | The initial firmware written for Descon 5.0 (2019) workshop |
 
 # Table of Contents
 This guide is in chronological order, so try not to skip through parts if you're not sure about it :)
