@@ -334,9 +334,9 @@ String newCredentials(String inputMessage) {
 void promptSave(String input) {
   Serial.println("System: Save this configuration? Enter 'yes' to save and restart the device. Enter anything else to cancel.");
   while (Serial.available()==0) {}
-  String input = Serial.readString();
-  input.trim();
-  if (input == "yes") {
+  String confirm = Serial.readString();
+  confirm.trim();
+  if (confirm == "yes") {
     Serial.println("System: New credentials are being saved.");
     saveCredentials(input);
     restartDevice();
