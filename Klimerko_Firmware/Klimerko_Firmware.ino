@@ -39,8 +39,8 @@ char* INTERVAL_ASSET    = "interval";
 // Other variables (don't touch if you don't know what you're doing)
 int readInterval = 15; // [MINUTES] Default device reporting time
 int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
-WifiCredentials wifiCreds = WifiCredentials("", "");
-DeviceConfig deviceCreds = DeviceConfig("", "");
+WifiCredentials wifiCreds = WifiCredentials("", ""); // Don't write anything here
+DeviceConfig deviceCreds = DeviceConfig("", ""); // Don't write anything here
 Device device = Device(wifiCreds, deviceCreds);
 const char*   airQuality;
 unsigned long lastReadTime;
@@ -78,7 +78,7 @@ void setup() {
   Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                        Firmware Version: 1.1                            |");
+  Serial.println("|                       Firmware Version: 1.1.2                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -91,8 +91,8 @@ void setup() {
   device.connectionLed(true);
   device.setActuationCallback(INTERVAL_ASSET, controlInterval);
   device.init();
-  publishInterval();
   delay(1000);
+  publishInterval();
   Serial.println("//// Your device is up and running! ////");
   Serial.print("//// Sensor data will be read and published in ");
   Serial.print(readInterval);
@@ -350,6 +350,7 @@ void promptSave(String input) {
 
 void saveCredentials(String whatToSave) {
   EEPROM.begin(EEPROMsize);
+  whatToSave.trim();
   
   if (whatToSave == "wifi") {
     formatMemory(wifiName_EEPROM_begin, wifiPassword_EEPROM_end);
