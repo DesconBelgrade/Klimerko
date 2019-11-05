@@ -66,11 +66,12 @@ Adafruit_BME280 bme;
 SoftwareSerial pmsSerial(pmsTX, pmsRX);
 PMS pms(pmsSerial);
 PMS::DATA data;
-CborPayload payload;
+CborPayload payload(1);
 
 // Runs at boot
 void setup() {
   Serial.begin(115200);
+  ESP.eraseConfig();
   pmsSerial.begin(9600);
   pms.passiveMode();
   bme.begin(0x76);
@@ -79,7 +80,7 @@ void setup() {
   Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                       Firmware Version: 1.1.2                           |");
+  Serial.println("|                       Firmware Version: 1.1.3                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -126,27 +127,31 @@ void readBME() {
   float humidityRaw = bme.readHumidity();
   float pressureRaw = bme.readPressure() / 100.0F;
 
-  static char temperature[7];
-  dtostrf(temperatureRaw, 6, 1, temperature);
-  static char humidity[7];
-  dtostrf(humidityRaw, 6, 1, humidity);
-  static char pressure[7];
-  dtostrf(pressureRaw, 6, 0, pressure);
-
-  // Print data to Serial port
-  Serial.println("-----------BME280-----------");
-  Serial.print("Temperature: ");
-  Serial.println(temperature);
-  Serial.print("Humidity:    ");
-  Serial.println(humidity);
-  Serial.print("Pressure:   ");
-  Serial.println(pressure);
-  Serial.println("----------------------------");
-
-  // Add data to payload to be sent to AllThingsTalk
-  payload.set(TEMPERATURE_ASSET, temperature);
-  payload.set(HUMIDITY_ASSET, humidity);
-  payload.set(PRESSURE_ASSET, pressure);
+  if (temperatureRaw != 0 && humidityRaw != 0) {
+    static char temperature[7];
+    dtostrf(temperatureRaw, 6, 1, temperature);
+    static char humidity[7];
+    dtostrf(humidityRaw, 6, 1, humidity);
+    static char pressure[7];
+    dtostrf(pressureRaw, 6, 0, pressure);
+  
+    // Print data to Serial port
+    Serial.println("-----------BME280-----------");
+    Serial.print("Temperature: ");
+    Serial.println(temperature);
+    Serial.print("Humidity:    ");
+    Serial.println(humidity);
+    Serial.print("Pressure:   ");
+    Serial.println(pressure);
+    Serial.println("----------------------------");
+  
+    // Add data to payload to be sent to AllThingsTalk
+    payload.set(TEMPERATURE_ASSET, temperature);
+    payload.set(HUMIDITY_ASSET, humidity);
+    payload.set(PRESSURE_ASSET, pressure);
+  } else {
+    Serial.print("System Error: Temperature/Humidity/Pressure Sensor (BME280) returned no data on data request this time.");
+  }
 }
 
 // Function that reads data from the PMS7003
@@ -234,6 +239,7 @@ void getCredentials() {
   deviceId = readData(deviceId_EEPROM_begin, deviceId_EEPROM_end);
   deviceToken = readData(deviceToken_EEPROM_begin, deviceToken_EEPROM_end);
   EEPROM.end();
+
 //  Serial.print("MEMORY: WiFi Name: ");
 //  Serial.println(wifiName);
 //  Serial.print("MEMORY: WiFi Password: ");

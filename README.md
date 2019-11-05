@@ -16,6 +16,7 @@ Read on to find out how to build your own!
 ### Firmware Version History
 | Version | Date | Notes |
 |--|--|--|
+| v1.1.3 | 5.11.2019 | Added Serial Monitor notification when BME280 fails to read data; Improved reliability when reconnecting to WiFi/AllThingsTalk and when loading credentials from memory |
 | v1.1.2 | 23.10.2019 | Fixed issue where quitting device credentials configuration dialog would still save changes for that session |
 | v1.1.1 | 23.10.2019 | Fixed configuring credentials on Linux |
 | v1.1 | 20.10.2019 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials); Updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |

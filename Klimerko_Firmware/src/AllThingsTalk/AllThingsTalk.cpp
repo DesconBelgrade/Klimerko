@@ -248,6 +248,7 @@ void Device::disconnect() {
 }
 
 void Device::connectWiFi() {
+    WiFi.disconnect(true);
     if (WiFi.status() != WL_CONNECTED) {
         fadeLed();
         WiFi.mode(WIFI_STA);
