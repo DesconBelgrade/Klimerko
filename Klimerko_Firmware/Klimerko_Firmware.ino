@@ -66,21 +66,21 @@ Adafruit_BME280 bme;
 SoftwareSerial pmsSerial(pmsTX, pmsRX);
 PMS pms(pmsSerial);
 PMS::DATA data;
-CborPayload payload(1);
+CborPayload payload;
 
 // Runs at boot
 void setup() {
   Serial.begin(115200);
   ESP.eraseConfig();
   pmsSerial.begin(9600);
-  pms.passiveMode();
+  //pms.passiveMode();
   bme.begin(0x76);
   Serial.println("");
   Serial.println("");
   Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                       Firmware Version: 1.1.3                           |");
+  Serial.println("|                       Firmware Version: 1.1.4                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -116,7 +116,7 @@ void readSensors() {
     readBME();
     readPMS();
     device.send(payload);
-    lastReadTime = currentTime;
+    lastReadTime = millis();
   }
 }
 
@@ -156,11 +156,9 @@ void readBME() {
 
 // Function that reads data from the PMS7003
 void readPMS() {
-  pms.requestRead();
-  delay(1000);
-  pms.requestRead();
   
   if (pms.readUntil(data)) {
+//  if (pms.read(data)) {
     // Save the current Air Quality sensor data
     int PM1 = data.PM_AE_UG_1_0;
     int PM2_5 = data.PM_AE_UG_2_5;
@@ -202,10 +200,12 @@ void readPMS() {
     Serial.print("System: Putting PMS7003 to sleep until ");
     Serial.print(wakeInterval);
     Serial.println(" seconds before next reading.");
+    Serial.flush();
     pms.sleep();
     pmsWoken = false;
   } else {
     Serial.println("System Error: Air Quality Sensor (PMS7003) returned no data on data request this time.");
+    Serial.flush();
     pms.sleep();
     pmsWoken = false;
   }
@@ -239,6 +239,8 @@ void getCredentials() {
   deviceId = readData(deviceId_EEPROM_begin, deviceId_EEPROM_end);
   deviceToken = readData(deviceToken_EEPROM_begin, deviceToken_EEPROM_end);
   EEPROM.end();
+  Serial.print("Device ID (AllThingsTalk): ");
+  Serial.println(deviceId);
 
 //  Serial.print("MEMORY: WiFi Name: ");
 //  Serial.println(wifiName);
