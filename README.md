@@ -16,7 +16,7 @@ Read on to find out how to build your own!
 ### Firmware Version History
 | Version | Date | Notes |
 |--|--|--|
-| v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if your're on this version) |
+| v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if you're on this version) |
 | v1.1.3 | 5.11.2019 | Added Serial Monitor notification when BME280 fails to read data; Improved reliability when reconnecting to WiFi/AllThingsTalk and when loading credentials from memory |
 | v1.1.2 | 23.10.2019 | Fixed issue where quitting device credentials configuration dialog would still save changes for that session |
 | v1.1.1 | 23.10.2019 | Fixed configuring credentials on Linux |
