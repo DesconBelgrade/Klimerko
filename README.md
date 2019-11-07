@@ -14,6 +14,9 @@ Read on to find out how to build your own!
 
 
 ### Firmware Version History
+
+To update your firmware, simply repeat the steps shown in [Uploading Firmware](#uploading-firmware) and [configure your credentials](#configuring-device-credentials).
+
 | Version | Date | Notes |
 |--|--|--|
 | v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if you're on this version) |
@@ -207,7 +210,7 @@ ESP8266 is the "brains" or "processor" of the NodeMCU, but Arduino IDE doesn't s
 - Search for and install “*esp8266*” by *ESP8266 Community*
 - Once done, close Arduino IDE
 
-## Upload Firmware
+## Uploading Firmware
 Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to do by uploading the program to it:
 
 - Plug in the USB cable into your Klimerko device and your computer
@@ -226,6 +229,7 @@ NodeMCU is now smart. It knows exactly what it needs to do, but it can't connect
 - Press the “RST” button on the NodeMCU
 - When you see “*Write 'config' to configure your credentials (expires in 10 seconds)*” in Serial monitor, enter “config” in the upper part of and press ENTER
 - Now enter “all” in the Serial Monitor input and press ENTER
+> NodeMCU's WiFi works on 2.4GHz, so make sure the network you're connecting to **is not** 5GHz WiFi
 - Enter your WiFi Network Name, WiFi Password and the Device ID and Device Token for communication with AllThingsTalk (noted earlier)
 - Your device will now restart. Wait for it to boot.
 > Use the Serial Monitor for diagnostic output from Klimerko. If you don’t see any data, restart Klimerko (either press the RST button on NodeMCU or unplug and plug it back in) because it’s currently not reading/publishing data, so there’s nothing to be shown.
