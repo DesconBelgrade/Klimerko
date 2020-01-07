@@ -80,7 +80,7 @@ void setup() {
   Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                       Firmware Version: 1.1.5                           |");
+  Serial.println("|                       Firmware Version: 1.1.6                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -123,7 +123,11 @@ void readSensors() {
 // Function for reading data from the BME280 Sensor
 void readBME() {
   // Save the current BME280 sensor data
-  float temperatureRaw = bme.readTemperature();
+  // BME280 Heats itself up about 1-2 degrees and the NodeMCU
+  // inside the Klimerko's 3D case interferes by about 2 degrees
+  // Because of this, we'll subtract 4 degrees from the raw reading
+  // (do note that the calibration/testing was done at 20*-25* celsius)
+  float temperatureRaw =  bme.readTemperature() - 4;
   float humidityRaw = bme.readHumidity();
   float pressureRaw = bme.readPressure() / 100.0F;
 

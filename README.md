@@ -19,6 +19,7 @@ To update your firmware, simply repeat the steps shown in [Uploading Firmware](#
 
 | Version | Date | Notes |
 |--|--|--|
+| v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
 | v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
 | v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if you're on this version) |
 | v1.1.3 | 5.11.2019 | Added Serial Monitor notification when BME280 fails to read data; Improved reliability when reconnecting to WiFi/AllThingsTalk and when loading credentials from memory |
