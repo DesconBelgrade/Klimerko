@@ -1,0 +1,25 @@
+# Syntax Coloring Map for AllThingsTalk WiFi SDK
+
+# Datatypes (KEYWORD1)
+
+# Methods and Functions (KEYWORD2)
+init	KEYWORD2
+loop	KEYWORD2
+debugPort	KEYWORD2
+send	KEYWORD2
+connect	KEYWORD2
+disconnect	KEYWORD2
+connectWiFi	KEYWORD2
+setHostname	KEYWORD2
+disconnectWiFi	KEYWORD2
+connectAllThingsTalk	KEYWORD2
+disconnectAllThingsTalk	KEYWORD2
+connectionLed	KEYWORD2
+wifiSignalReporting	KEYWORD2
+wifiSignal	KEYWORD2
+setActuationCallback	KEYWORD2
+createAsset	KEYWORD2
+
+# Instances (KEYWORD2)
+
+# Constants (LITERAL1)

@@ -1,20 +1,22 @@
-/*  This is taken from https://github.com/DesconBelgrade/Klimerko
- *  Please head over there to read more about the project.
- *  Do not change anything in here unless you know what you're doing.
- *  To configure your WiFi and Cloud credentials, open Serial Monitor,
- *  restart the device, write "config" in Serial Monitor and follow the instructions
+/*  This sketch is downloaded from https://github.com/DesconBelgrade/Klimerko
+ *  Head over there to read instructions and more about the project.
+ *  Do not change anything in here unless you know what you're doing. Just upload this sketch to your device.
+ *  You'll configure your WiFi and Cloud credentials once the sketch is uploaded to the device by 
+ *  opening Serial Monitor, restarting the device (RST button on NodeMCU), writing "config" in Serial Monitor 
+ *  and following the instructions.
  * 
  *  --------------- Project "KLIMERKO" ---------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
- *  Air Quality Scale (PM 10 based): Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
- *  This is a continued effort from https://descon.me/2018/winning-product/
- *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
- *  Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
- *  3D Case for the device designed and built by Dusan Nikic // nikic.dule@gmail.com
- *  Programmed and built by Vanja Stanic // www.vanjastanic.com
+ *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
+ *  - This is a continued effort from https://descon.me/2018/winning-product/
+ *  - Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
+ *  - Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
+ *  - 3D Case for the device designed and printed by Dusan Nikic // nikic.dule@gmail.com
+ *  
+ *  Textual Air Quality Scale is PM10 based: Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
 */
 
-#include "src/AllThingsTalk/AllThingsTalk.h"
+#include "src/AllThingsTalk/AllThingsTalk_WiFi.h"
 #include "src/AdafruitBME280/Adafruit_Sensor.h"
 #include "src/AdafruitBME280/Adafruit_BME280.h"
 #include "src/pmsLibrary/PMS.h"
@@ -37,6 +39,7 @@ char* PRESSURE_ASSET    = "pressure";
 char* INTERVAL_ASSET    = "interval";
 
 // Other variables (don't touch if you don't know what you're doing)
+String firmwareVersion = "1.2.0";
 int readInterval = 15; // [MINUTES] Default device reporting time
 int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
 WifiCredentials wifiCreds = WifiCredentials("", ""); // Don't write anything here
@@ -68,19 +71,22 @@ PMS pms(pmsSerial);
 PMS::DATA data;
 CborPayload payload;
 
-// Runs at boot
+// Runs only at boot
 void setup() {
   Serial.begin(115200);
+  delay(2000); // So the user has time to open Serial Monitor
   ESP.eraseConfig();
   pmsSerial.begin(9600);
   //pms.passiveMode();
   bme.begin(0x76);
   Serial.println("");
   Serial.println("");
-  Serial.println(" --------------------------Project 'KLIMERKO'-----------------------------");
+  Serial.println(" ------------------------- Project 'KLIMERKO' ----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
   Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.println("|                       Firmware Version: 1.1.6                           |");
+  Serial.print("|                       Firmware Version: ");
+  Serial.print(firmwareVersion);
+  Serial.println("                           |");
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
@@ -92,14 +98,17 @@ void setup() {
   device.wifiSignalReporting(true);
   device.connectionLed(true);
   device.setActuationCallback(INTERVAL_ASSET, controlInterval);
+  device.createAsset("firmware", "Firmware Version", "sensor", "string");
   device.init();
-  delay(1000);
+  device.send("firmware", firmwareVersion);
   publishInterval();
-  Serial.println("//// Your device is up and running! ////");
-  Serial.print("//// Sensor data will be read and published in ");
+  Serial.println("");
+  Serial.println(">>>>>>>>>>>>>>>  Your Klimerko is up and running!  <<<<<<<<<<<<<<<");
+  Serial.print("Sensor data will be read and published in ");
   Serial.print(readInterval);
-  Serial.println(" minute(s)) ////");
-  Serial.println("//// You can change this interval from AllThingsTalk Maker ////");
+  Serial.println(" minute(s)");
+  Serial.println("You can change this interval from AllThingsTalk Maker");
+  Serial.println("");
 }
 
 // Function to read both sensors at the same time
@@ -160,7 +169,6 @@ void readBME() {
 
 // Function that reads data from the PMS7003
 void readPMS() {
-  
   if (pms.readUntil(data)) {
 //  if (pms.read(data)) {
     // Save the current Air Quality sensor data

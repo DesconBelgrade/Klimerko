@@ -1,7 +1,7 @@
 #ifndef DEVICECONFIG_H_
 #define DEVICECONFIG_H_
 
-#include "common/Credentials.h" 
+#include "Credentials.h" 
 
 class DeviceConfig : public Credentials {
 public:

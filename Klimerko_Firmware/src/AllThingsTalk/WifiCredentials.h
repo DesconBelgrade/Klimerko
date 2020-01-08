@@ -1,7 +1,7 @@
 #ifndef WIFI_CREDENTIALS_H_
 #define WIFI_CREDENTIALS_H_
 
-#include "common/Credentials.h"
+#include "Credentials.h"
 
 class WifiCredentials : public Credentials {
 public:
