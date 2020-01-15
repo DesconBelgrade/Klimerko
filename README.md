@@ -15,7 +15,7 @@ Read on to find out how to build your own!
 
 ### Firmware Version History
 
-To update your firmware, simply repeat the steps shown in [Uploading Firmware](#uploading-firmware) and [configure your credentials](#configuring-device-credentials).
+To update your firmware, simply repeat the steps shown in [Uploading Firmware](#uploading-firmware).
 
 | Version | Date | Notes |
 |--|--|--|
@@ -224,6 +224,7 @@ Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to d
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
 - Go to *Tools* > *Port* and you should see a single port there. Select it.
+- ***IF UPDATING FIRMWARE:*** Go to *Tools* > *Erase Flash* > *Only Sketch*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
 ## Configuring Device Credentials
