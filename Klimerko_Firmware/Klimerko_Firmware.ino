@@ -1,53 +1,45 @@
-/*  This sketch is downloaded from https://github.com/DesconBelgrade/Klimerko
+/*  
+ *   ------------------------------------------- Project "KLIMERKO" ---------------------------------------------
+ *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
+ *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
+ *  
+ *  This is a continued effort from https://descon.me/2018/winning-product/.
+ *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs.
+ *  Project is powered by IoT Cloud Services and Communications SDK from AllThingsTalk // www.allthingstalk.com/
+ *  3D Case for the device is designed and manufactured by Dusan Nikic // nikic.dule@gmail.com
+ *  ------------------------------------------------------------------------------------------------------------
+ *  
+ *  This sketch is downloaded from https://github.com/DesconBelgrade/Klimerko
  *  Head over there to read instructions and more about the project.
  *  Do not change anything in here unless you know what you're doing. Just upload this sketch to your device.
  *  You'll configure your WiFi and Cloud credentials once the sketch is uploaded to the device by 
  *  opening Serial Monitor, restarting the device (RST button on NodeMCU), writing "config" in Serial Monitor 
  *  and following the instructions.
- * 
- *  --------------- Project "KLIMERKO" ---------------
- *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
- *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
- *  - This is a continued effort from https://descon.me/2018/winning-product/
- *  - Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs
- *  - Project is powered by IoT Cloud Services and SDK from AllThingsTalk // www.allthingstalk.com
- *  - 3D Case for the device designed and printed by Dusan Nikic // nikic.dule@gmail.com
  *  
  *  Textual Air Quality Scale is PM10 based: Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
-*/
+ */
 
 #include "src/AllThingsTalk/AllThingsTalk_WiFi.h"
 #include "src/AdafruitBME280/Adafruit_Sensor.h"
 #include "src/AdafruitBME280/Adafruit_BME280.h"
 #include "src/pmsLibrary/PMS.h"
+#include "src/movingAvg/movingAvg.h"
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <EEPROM.h>
 
+String firmwareVersion = "1.3.0";
+int sendInterval = 15; // [MINUTES] Default sensor data sending interval
+int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
+int averageSamples = 10; // Number of samples used to average values from sensors
+int deviceRestartWait = 3; // Seconds to wait when restarting NodeMCU
+bool noSleep = false;
 // Pins to which the PMS7003 is connected to
 const uint8_t pmsTX = D5;
 const uint8_t pmsRX = D6;
-
-// Assets to be published to
-char* PM1_ASSET         = "pm1";
-char* PM2_5_ASSET       = "pm2-5";
-char* PM10_ASSET        = "pm10";
-char* AQ_ASSET          = "air-quality";
-char* TEMPERATURE_ASSET = "temperature";
-char* HUMIDITY_ASSET    = "humidity";
-char* PRESSURE_ASSET    = "pressure";
-char* INTERVAL_ASSET    = "interval";
-
-// Other variables (don't touch if you don't know what you're doing)
-String firmwareVersion = "1.2.0";
-int readInterval = 15; // [MINUTES] Default device reporting time
-int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
-WifiCredentials wifiCreds = WifiCredentials("", ""); // Don't write anything here
-DeviceConfig deviceCreds = DeviceConfig("", ""); // Don't write anything here
-Device device = Device(wifiCreds, deviceCreds);
-const char*   airQuality;
-unsigned long lastReadTime;
-unsigned long currentTime;
+const char *airQuality, *airQualityRaw;
+unsigned long currentTime, lastReadTime, lastSendTime;
+int avgTemperature, avgHumidity, avgPressure, avgPM1, avgPM25, avgPM10;
 bool firstReading = true;
 bool pmsWoken = false;
 String wifiName, wifiPassword, deviceId, deviceToken;
@@ -62,24 +54,47 @@ int deviceToken_EEPROM_begin = 768;
 int deviceToken_EEPROM_end = 1024;
 int EEPROMsize = 1024;
 String dataDivider = ";";
-int deviceRestartWait = 5; // Seconds
+// Assets to be published to
+char* PM1_ASSET         = "pm1";
+char* PM2_5_ASSET       = "pm2-5";
+char* PM10_ASSET        = "pm10";
+char* AQ_ASSET          = "air-quality";
+char* TEMPERATURE_ASSET = "temperature";
+char* HUMIDITY_ASSET    = "humidity";
+char* PRESSURE_ASSET    = "pressure";
+char* INTERVAL_ASSET    = "interval";
 
-// Sensor initialization
+WifiCredentials wifiCreds = WifiCredentials("", ""); // Don't write anything here
+DeviceConfig deviceCreds = DeviceConfig("", ""); // Don't write anything here
+Device device = Device(wifiCreds, deviceCreds);
 Adafruit_BME280 bme;
 SoftwareSerial pmsSerial(pmsTX, pmsRX);
 PMS pms(pmsSerial);
 PMS::DATA data;
 CborPayload payload;
+movingAvg pm1(averageSamples);
+movingAvg pm25(averageSamples);
+movingAvg pm10(averageSamples);
+movingAvg temp(averageSamples);
+movingAvg hum(averageSamples);
+movingAvg pres(averageSamples);
 
 // Runs only at boot
 void setup() {
   Serial.begin(115200);
-  delay(2000); // So the user has time to open Serial Monitor
+  // The following gives the user time to open serial monitor
+  // and his computer to recognize the COM port for klimerko
+  // before outputting data
+  for (int i=5; i > 0; i--) {
+    Serial.print("Booting in ");
+    Serial.print(i);
+    Serial.println(" seconds");
+    delay(1000);
+  }
   ESP.eraseConfig();
   pmsSerial.begin(9600);
-  //pms.passiveMode();
+  pmsPower(false);
   bme.begin(0x76);
-  Serial.println("");
   Serial.println("");
   Serial.println(" ------------------------- Project 'KLIMERKO' ----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
@@ -90,7 +105,7 @@ void setup() {
   Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
   Serial.println(" -------------------------------------------------------------------------");
   getCredentials();
-  while(millis() < 10000) {
+  while(millis() < 14000) {
     configureCredentials();
   }
   credentialsSDK();
@@ -98,34 +113,129 @@ void setup() {
   device.wifiSignalReporting(true);
   device.connectionLed(true);
   device.setActuationCallback(INTERVAL_ASSET, controlInterval);
-  device.createAsset("firmware", "Firmware Version", "sensor", "string");
+  device.createAsset("firmware", "Firmware Version", "sensor", "string"); // Create asset on AllThingsTalk for firmware version
   device.init();
-  device.send("firmware", firmwareVersion);
-  publishInterval();
+  device.send("firmware", firmwareVersion); // Send the current firmware version to newly created AllThingsTalk asset
+  publishInterval(); // Send current reporting interval
+  pm1.begin();
+  pm25.begin();
+  pm10.begin();
+  temp.begin();
+  hum.begin();
+  pres.begin();
   Serial.println("");
-  Serial.println(">>>>>>>>>>>>>>>  Your Klimerko is up and running!  <<<<<<<<<<<<<<<");
-  Serial.print("Sensor data will be read and published in ");
-  Serial.print(readInterval);
-  Serial.println(" minute(s)");
-  Serial.println("You can change this interval from AllThingsTalk Maker");
+  Serial.println(">>>>>>>>>>>>>>>>>>  Your Klimerko is up and running!  <<<<<<<<<<<<<<<<<<<<<");
+  Serial.print("Sensor data is read every ");
+  Serial.print(readIntervalSeconds());
+  Serial.print(" seconds (for averaging) and published every ");
+  Serial.print(sendInterval);
+  Serial.println(" minutes.");
+  Serial.println("You can change the sending interval from your AllThingsTalk Maker.");
+  Serial.println("Sensor data read interval dynamically adjusts based on the sending interval.");
+  Serial.println("Average values are sent to the cloud - You can observe current sensor data in this window.");
   Serial.println("");
 }
 
 // Function to read both sensors at the same time
 void readSensors() {
-  currentTime = millis();
-  if (currentTime - lastReadTime >= (readInterval * 60000) - (wakeInterval * 1000) && !pmsWoken) {
+  // Check if it's time to wake up PMS7003
+  if (millis() - lastReadTime >= readIntervalMillis() - (wakeInterval * 1000) && !pmsWoken) {
     Serial.println("System: Now waking up PMS7003");
-    pms.wakeUp();
-    pms.passiveMode();
-    pmsWoken = true;
+    pmsPower(true);
   }
-  if (currentTime - lastReadTime >= readInterval * 60000) {
-    payload.reset();
-    readBME();
+  
+  // Read sensor data
+  if (millis() - lastReadTime >= readIntervalMillis()) {
+    Serial.println("------------------------DATA------------------------");
     readPMS();
-    device.send(payload);
+    readBME();
+    Serial.println("----------------------------------------------------");
+    if (!noSleep) {
+      Serial.print("System: Air Quality Sensor will sleep until ");
+      Serial.print(wakeInterval);
+      Serial.println(" seconds before next reading.");
+      pmsPower(false);
+    }
     lastReadTime = millis();
+  }
+  
+  // Send average sensor data
+  if (millis() - lastSendTime >= sendInterval * 60000) {
+    Serial.println("Now sending averaged data to AllThingsTalk...");
+    payload.reset();
+    payload.set(AQ_ASSET, airQuality);
+    payload.set(PM1_ASSET, avgPM1);
+    payload.set(PM2_5_ASSET, avgPM25);
+    payload.set(PM10_ASSET, avgPM10);
+    payload.set(TEMPERATURE_ASSET, avgTemperature);
+    payload.set(HUMIDITY_ASSET, avgHumidity);
+    payload.set(PRESSURE_ASSET, avgPressure);
+    device.send(payload);
+    lastSendTime = millis();
+  }
+}
+
+// Function that reads data from the PMS7003
+void readPMS() {
+  pms.requestRead();
+  if (pms.readUntil(data)) {
+    int PM1 = data.PM_AE_UG_1_0;
+    int PM2_5 = data.PM_AE_UG_2_5;
+    int PM10 = data.PM_AE_UG_10_0;
+
+    avgPM1 = pm1.reading(PM1);
+    avgPM25 = pm25.reading(PM2_5);
+    avgPM10 = pm10.reading(PM10);
+
+    // Assign a text value of how good the air is based on current value
+    if (PM10 <= 25) {
+      airQualityRaw = "Excellent";
+    } else if (PM10 >= 26 && PM10 <= 35) {
+      airQualityRaw = "Good";
+    } else if (PM10 >= 36 && PM10 <= 50) {
+      airQualityRaw = "Acceptable";
+    } else if (PM10 >= 51 && PM10 <= 75) {
+      airQualityRaw = "Polluted";
+    } else if (PM10 > 76) {
+      airQualityRaw = "Very Polluted";
+    }
+
+    // Assign a text value of how good the air is based on average value
+    if (avgPM10 <= 25) {
+      airQuality = "Excellent";
+    } else if (avgPM10 >= 26 && avgPM10 <= 35) {
+      airQuality = "Good";
+    } else if (avgPM10 >= 36 && avgPM10 <= 50) {
+      airQuality = "Acceptable";
+    } else if (avgPM10 >= 51 && avgPM10 <= 75) {
+      airQuality = "Polluted";
+    } else if (avgPM10 > 76) {
+      airQuality = "Very Polluted";
+    }
+
+    // Print via SERIAL
+    Serial.print("Air Quality is ");
+    Serial.print(airQualityRaw);
+    Serial.print(" (Average: ");
+    Serial.print(airQuality);
+    Serial.println(")");
+    Serial.print("PM 1:          ");
+    Serial.print(PM1);
+    Serial.print(" (Average: ");
+    Serial.print(avgPM1);
+    Serial.println(")");
+    Serial.print("PM 2.5:        ");
+    Serial.print(PM2_5);
+    Serial.print(" (Average: ");
+    Serial.print(avgPM25);
+    Serial.println(")");
+    Serial.print("PM 10:         ");
+    Serial.print(PM10);
+    Serial.print(" (Average: ");
+    Serial.print(avgPM10);
+    Serial.println(")");
+  } else {
+    Serial.println("System Error: Air Quality Sensor (PMS7003) returned no data on data request this time.");
   }
 }
 
@@ -147,92 +257,66 @@ void readBME() {
     dtostrf(humidityRaw, 6, 1, humidity);
     static char pressure[7];
     dtostrf(pressureRaw, 6, 0, pressure);
-  
+
+    // Add to average calculation and load current average
+    avgTemperature = temp.reading(temperatureRaw);
+    avgHumidity = hum.reading(humidityRaw);
+    avgPressure = pres.reading(pressureRaw);
+
     // Print data to Serial port
-    Serial.println("-----------BME280-----------");
     Serial.print("Temperature: ");
-    Serial.println(temperature);
+    Serial.print(temperature);
+    Serial.print(" (Average: ");
+    Serial.print(avgTemperature);
+    Serial.println(")");
     Serial.print("Humidity:    ");
-    Serial.println(humidity);
-    Serial.print("Pressure:   ");
-    Serial.println(pressure);
-    Serial.println("----------------------------");
-  
-    // Add data to payload to be sent to AllThingsTalk
-    payload.set(TEMPERATURE_ASSET, temperature);
-    payload.set(HUMIDITY_ASSET, humidity);
-    payload.set(PRESSURE_ASSET, pressure);
+    Serial.print(humidity);
+    Serial.print(" (Average: ");
+    Serial.print(avgHumidity);
+    Serial.println(")");
+    Serial.print("Pressure:    ");
+    Serial.print(pressure);
+    Serial.print(" (Average: ");
+    Serial.print(avgPressure);
+    Serial.println(")");
   } else {
     Serial.print("System Error: Temperature/Humidity/Pressure Sensor (BME280) returned no data on data request this time.");
   }
 }
 
-// Function that reads data from the PMS7003
-void readPMS() {
-  if (pms.readUntil(data)) {
-//  if (pms.read(data)) {
-    // Save the current Air Quality sensor data
-    int PM1 = data.PM_AE_UG_1_0;
-    int PM2_5 = data.PM_AE_UG_2_5;
-    int PM10 = data.PM_AE_UG_10_0;
-
-
-    // Assign a text value of how good the air is
-    if (PM10 <= 25) {
-      airQuality = "Excellent";
-    } else if (PM10 >= 26 && PM10 <= 35) {
-      airQuality = "Good";
-    } else if (PM10 >= 36 && PM10 <= 50) {
-      airQuality = "Acceptable";
-    } else if (PM10 >= 51 && PM10 <= 75) {
-      airQuality = "Polluted";
-    } else if (PM10 > 76) {
-      airQuality = "Very Polluted";
-    }
-
-    // Print via SERIAL
-    Serial.println("----------PMS7003-----------");
-    Serial.print("Air Quality is ");
-    Serial.print(airQuality);
-    Serial.println(", based on PM 10 value");
-    Serial.print("PM 1.0 (ug/m3):  ");
-    Serial.println(PM1);
-    Serial.print("PM 2.5 (ug/m3):  ");
-    Serial.println(PM2_5);
-    Serial.print("PM 10.0 (ug/m3): ");
-    Serial.println(PM10);
-    Serial.println("----------------------------");
-
-    // Add data to payload to be sent to AllThingsTalk
-    payload.set(PM1_ASSET, PM1);
-    payload.set(PM2_5_ASSET, PM2_5);
-    payload.set(PM10_ASSET, PM10);
-    payload.set(AQ_ASSET, airQuality);
-
-    Serial.print("System: Putting PMS7003 to sleep until ");
-    Serial.print(wakeInterval);
-    Serial.println(" seconds before next reading.");
-    Serial.flush();
-    pms.sleep();
-    pmsWoken = false;
-  } else {
-    Serial.println("System Error: Air Quality Sensor (PMS7003) returned no data on data request this time.");
-    Serial.flush();
-    pms.sleep();
-    pmsWoken = false;
-  }
-}
-
 // Function that's called once a user sets the interval 
 void controlInterval(int interval) {
-  if (interval != 0) {
-    readInterval = interval;
-    Serial.print("System: Device reporting interval changed to ");
+  if (interval > 5 && interval <= 60) {
+    sendInterval = interval;
+    noSleep = false;
+    Serial.print("System: Device reporting interval set to ");
     Serial.print(interval);
-    Serial.println(" minute");
+    Serial.println(" minutes");
+    Serial.print("System: Sensor data will be read every ");
+    Serial.print(readIntervalSeconds());
+    Serial.println(" seconds for averaging.");
     publishInterval();
-  } else {
-    Serial.println("System Error: Attempted to set device reporting interval to 0. No changes made.");
+  } else if (interval <= 5) {
+    sendInterval = 5;
+    noSleep = true;
+    pmsPower(true);
+    Serial.println("System: Reporting interval set to 5 minutes (minimum).");
+    Serial.print("System: Sensor data will be read every ");
+    Serial.print(readIntervalSeconds());
+    Serial.println(" seconds for averaging.");
+    Serial.println("System: Note that this prevents sleeping of Air Quality Sensor and reduces its lifespan.");
+    publishInterval();
+  } else if (interval > 60) {
+    noSleep = false;
+    Serial.print("System: Received command to set reporting interval to ");
+    Serial.print(interval);
+    Serial.println(" minutes but that exceeds the maximum.");
+    Serial.print("System: Reverted back to ");
+    Serial.print(sendInterval);
+    Serial.println(" minutes.");
+    Serial.print("System: Sensor data will be read every ");
+    Serial.print(readIntervalSeconds());
+    Serial.println(" seconds for averaging.");
     publishInterval();
   }
 }
@@ -240,7 +324,32 @@ void controlInterval(int interval) {
 // Function (called at boot in setup()) that publishes the current data sending interval value to AllThingsTalk
 void publishInterval() {
   Serial.println("System: Publishing the actual device reporting interval to AllThingsTalk");
-  device.send(INTERVAL_ASSET, readInterval);
+  device.send(INTERVAL_ASSET, sendInterval);
+}
+
+int readIntervalMillis() {
+  int result = (sendInterval * 60000) / averageSamples;
+  return result;
+}
+
+int readIntervalSeconds() {
+  int result = (sendInterval * 60) / averageSamples;
+  return result;
+}
+
+void pmsPower(bool state) {
+  if (state) {
+    pms.wakeUp();
+    pms.passiveMode();
+    pmsWoken = true;
+  } else {
+    pmsSerial.flush();
+    //while (pmsSerial.available()) { pmsSerial.read(); }
+    delay(100);
+    pmsWoken = false;
+    pms.sleep();
+    
+  }
 }
 
 void getCredentials() {
@@ -276,7 +385,7 @@ String readData(int startAddress, int endAddress) {
   return output;
 }
 
-// Convert credentials for SDK
+// Convert credentials for SDK readability
 void credentialsSDK() {
   char *wifiNameChar, *wifiPasswordChar, *deviceIdChar, *deviceTokenChar;
   wifiNameChar = (char*)malloc(wifiName.length()+1);
@@ -436,7 +545,7 @@ void restartDevice() {
 }
 
 void loop() {
-  device.loop(); // Keep the connection to AllThingsTalk alive
   readSensors(); // Read data from sensors
+  device.loop(); // Keep the connection to AllThingsTalk alive
   configureCredentials(); // Enable credentials configuration from serial interface
 }
