@@ -19,6 +19,7 @@ To update your firmware, simply repeat the steps shown in [Uploading Firmware](#
 
 | Version | Date | Notes |
 |--|--|--|
+| v1.3.0 | 15.1.2020 | Sensor data is now read 10 times before sending to the cloud and only average data is sent to the cloud. Sensor data reading and averaging dynamically adjusts based on the user-configurable reporting period. Minimum reporting period is now 5 minutes and if set to 5 minutes, the air quality sensor doesn't sleep at all. This reduces its lifespan but is useful to get highly precise data because the air quality sensor's fan never stops spinning (as opposed to 30 seconds before reading data). Setting the reporting period to 6 minutes or higher enables air quality sensors' sleep. |
 | v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Send firmware version info to platform |
 | v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
 | v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
