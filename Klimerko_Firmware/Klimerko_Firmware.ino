@@ -28,7 +28,7 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
-String firmwareVersion = "1.3.0";
+String firmwareVersion = "1.3.0 BETA";
 int sendInterval = 15; // [MINUTES] Default sensor data sending interval
 int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
 int averageSamples = 10; // Number of samples used to average values from sensors
