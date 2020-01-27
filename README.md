@@ -71,7 +71,7 @@ Some items are clickable and you can buy them right away.
 - USB Power adapter (5V, minimum 250mA/0.25A)
 - MicroUSB Cable
 - **4x** Wires (each at least 13cm long)
-- ***Optional:*** 3D printed case for the device, which comprises of:
+- ***Optional:*** 3D printed case for the device ([STL Files](https://github.com/DesconBelgrade/Klimerko/tree/master/Klimerko_Printable_Case)), which comprises of:
     - Components base
     - Weather-resistant cover
     - Flat stand
@@ -99,6 +99,8 @@ When soldering, make sure that there's no solder between any two pins (connectio
 **Pay attention to VIN and GND** pins on the NodeMCU, because shorting (connecting) those two pins together **will fry** NodeMCU and possibly the power source it's connected to.
 
 ## 3D Case Preparation
+
+> You can print your own Klimerko Case using a 3D Printer using the [3D Print Files](https://github.com/DesconBelgrade/Klimerko/tree/master/Klimerko_Printable_Case). If you don't have a 3D Printer, your local hacker/makerspace most likely has one!
 
 > In case you're not following this guide at a workshop: 
 > You're still able to build this device if you don't have the 3D case. You'll just need to tinker and figure out how to place the device in a secure location away from rain/sun (but in an open space so it can detect pollution properly) 
