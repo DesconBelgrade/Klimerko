@@ -13,14 +13,14 @@ It publishes data to your [AllThingsTalk Maker Cloud](https://www.allthingstalk.
 Read on to find out how to build your own!
 
 
-### Firmware Version History
+## Firmware Version History
 
-To update your firmware, simply repeat the steps shown in [Uploading Firmware](#uploading-firmware).
+**To update your existing Klimerko's Firmware, go to [Updating Firmware](#updating-firmware)**
 
 | Version | Date | Notes |
 |--|--|--|
-| v1.3.0 | 15.1.2020 | Sensor data is now read 10 times before sending to the cloud and only average data is sent to the cloud. Sensor data reading and averaging dynamically adjusts based on the user-configurable reporting period. Minimum reporting period is now 5 minutes and if set to 5 minutes, the air quality sensor doesn't sleep at all. This reduces its lifespan but is useful to get highly precise data because the air quality sensor's fan never stops spinning (as opposed to 30 seconds before reading data). Setting the reporting period to 6 minutes or higher enables air quality sensors' sleep. |
-| v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Send firmware version info to platform |
+| v1.3.0 | 27.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix  |
+| v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Firmware version reporting |
 | v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
 | v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
 | v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if you're on this version) |
@@ -50,6 +50,7 @@ This guide is in chronological order, so try not to skip through parts if you're
   * [Configure Device](#configure-device)
   * [Share Data](#share-data)
   * [Visualize Data](#visualize-data)
+* [Updating Firmware](#updating-firmware)
 * [Problems & Fixes](#problems--fixes)
 
 
@@ -66,16 +67,17 @@ Some items are clickable and you can buy them right away.
 - [Plantower PMS7003](https://www.aliexpress.com/item/32623909733.html) Air Quality Sensor *(if buying, get the one with Bridge Board and Connector Cable)*
     - Bridge board
     - Connector cable
-- [Bosch BME280](https://www.aliexpress.com/item/32961882719.html) Temperature/Humidity/Pressure Sensor *(if buying, choose the "3.3V" one)*
-- USB Power adapter (5V, minimum 250mA)
-- MicroUSB Cable (5m preferred)
+- [Bosch BME280](https://www.aliexpress.com/item/32817286611.html) Temperature/Humidity/Pressure Sensor *(if buying, choose the "3.3V" one)*
+- USB Power adapter (5V, minimum 250mA/0.25A)
+- MicroUSB Cable
+- **4x** Wires (each at least 13cm long)
 - ***Optional:*** 3D printed case for the device, which comprises of:
     - Components base
     - Weather-resistant cover
     - Flat stand
     - Wall-mount holder
-- **5x** Screws (for plastic, 3x5mm) (**7**x screws if you’re going to wall-mount the device)
-- **4x** Wires (each at least 13cm long)
+    - Non-3D-Printed: **5x** Screws (for plastic, 3x5mm) (**7**x screws if you’re going to wall-mount the device)
+
 
 
 ## Tools Required
@@ -85,7 +87,7 @@ You’re going to need the following tools at minimum to complete the project:
 - Soldering Iron
 - Solder
 - Scissors or a Wire Stripper
-- Screwdriver
+- Screwdriver (required only if using 3D printed case)
 
 
 
@@ -129,7 +131,8 @@ These are the wires to pull (marked red):
 
 ## BME280 Sensor Preparation
 - Take the 4 wires you have prepared (not to be confused with the PMS7003 wires) and strip (remove insulation) ~2mm from each end of each wire so that you have 4 wires with all ends stripped.
-- Solder those 4 wires to pins **SDA**, **SCL**, **GND**, **VCC/VIN** on the BME280
+- Solder those 4 wires to pins **SDA**, **SCL**, **GND**, **VCC/VIN** on the BME280.  
+  **If you have a 6-pin version of BME280, the CSB and SDO pins simply aren't used.**
 - Make sure the PMS7003 Sensor is seated properly (because BME280 goes above it), and only then proceed to the next step.
 - Mount the BME280 sensor in place by screwing it to the hole in the upper right side of the 3D case (above the PMS7003).
 - Route the wires through the circular hole in the components base of the 3D case so it reaches the other side of the base.
@@ -198,12 +201,15 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 
 
 # Software
-For all of the steps below, you'll need Arduino IDE (Integrated Development Environment).  This is a tool that's used to send the "firmware" or "program" to your device.  
+For all of the steps below, you'll need Arduino IDE (Integrated Development Environment).  
+This is a tool that's used to send the "firmware" or "program" to your device.  
 
-**If you already have Arduino IDE, make sure it's at least version 1.8.10**
+> If you already have Arduino IDE, **make sure it's at least version 1.8.10**
 
-Download and install https://www.arduino.cc/en/Main/software 
-(choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues)
+- Download and install [Arduino IDE](https://www.arduino.cc/en/Main/software) 
+(choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues).
+
+- If you're running **Apple's MacOS**, also [download and install the CP2102 Driver](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip) in order to enable your Mac to recognize Klimerko for further steps.
 
 ## Installing ESP8266 Support
 ESP8266 is the "brains" or "processor" of the NodeMCU, but Arduino IDE doesn't support it out-of-the-box. That's an easy one:
@@ -223,8 +229,8 @@ Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to d
 - Open “Klimerko_Firmware.ino” with Arudino IDE
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
-- Go to *Tools* > *Port* and you should see a single port there. Select it.
-- ***IF UPDATING FIRMWARE:*** Go to *Tools* > *Erase Flash* > *Only Sketch*
+- Go to *Tools* > *Port* and you should see **COM** and a number next to it. Choose it.
+  - If you're running **MacOS**, choose */dev/cu.SLAB_USBtoUART*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
 ## Configuring Device Credentials
@@ -304,14 +310,37 @@ All data from your Klimerko is visualized here:
 - Device reporting interval (minutes)  
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
-You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
+**You’re done!**  
+Enjoy your device and feel free to visit [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
+# Updating Firmware
+This step is for those who've already built their Klimerko and wish to update its firmware to the latest version.
+
+- Plug in the USB cable into your Klimerko and your computer
+- [Download the latest Klimerko Firmware](https://github.com/DesconBelgrade/Klimerko/archive/master.zip)
+- Unzip the file, open it and go to “*Klimerko_Firmware*” folder
+- Open “*Klimerko_Firmware.ino*” with Arudino IDE
+- Go to *Tools* > *Board* > *Boards Manager*
+- Search for “*esp8266*” by *ESP8266 Community*
+  -  Even if you already have this installed, you need to have the latest version, so click the **Update** button next to the result if you see it. If not, you probably already have the latest version.
+- Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
+- Go to *Tools* > *Upload Speed* and choose *115200*
+- Go to *Tools* > *Port* and you should see **COM** and a number next to it. Choose it.
+  - If you're running **MacOS**, choose **/dev/cu.SLAB_USBtoUART** (if you don't see it, install [the driver first](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip))
+- Go to *Tools* > *Erase Flash* > *Only Sketch*
+- Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
+
+Awesome! Your Klimerko is now updated to the latest version!
 
 # Problems & Fixes
 - If you're having compiling issues (orange errors in the bottom of Arduino IDE), make sure that:
 	- Your Arduino IDE is at least version **1.8.10**
 	- You've downloaded the latest firmware from https://github.com/DesconBelgrade/Klimerko/archive/master.zip
 	- You've selected the correct board and port as shown [here](#upload-firmware)
+    - You're running the latest version of ESP8266 Core
+      - In Arduino IDE, go to *Tools* > *Board* > *Boards Manager*
+      - Search for “*esp8266*” by *ESP8266 Community*
+      - Click the **Update** button shown next to the result (if you don't see it, you're probably running the latest version)
 - If your device is showing unintelligible text in Serial Monitor:
 	- Make sure your Serial Monitor is set to baud rate of 115200 (set this in the bottom right corner of Serial Monitor)
 - If your device won't connect to WiFi or AllThingsTalk
@@ -321,7 +350,7 @@ You’re done! Enjoy your device and feel free to visit [vazduhgradjanima.rs](ht
 - If your device is connected, but the sensor data you're seeing on AllThingsTalk is "0":
 	- [Check your wiring](#hardware-assembly) to make sure everything is connected properly.
 	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device.
-	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
+	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (only 2mm or less should be exposed before soldering) and solder it back.
 - If it seems your device won't turn on:
 	- The NodeMCU has a blue LED right above the small shiny metallic box. That LED blinks for a brief moment right when you plug the device into power. If yours doesn't blink when you plug it in, check the USB cable (and try another one if you have it). If that makes no difference, check the power supply (the adapter).
 	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 

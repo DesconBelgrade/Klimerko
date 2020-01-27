@@ -14,7 +14,7 @@
  *  Do not change anything in here unless you know what you're doing. Just upload this sketch to your device.
  *  You'll configure your WiFi and Cloud credentials once the sketch is uploaded to the device by 
  *  opening Serial Monitor, restarting the device (RST button on NodeMCU), writing "config" in Serial Monitor 
- *  and following the instructions.
+ *  and following the instructions shown in Serial Monitor.
  *  
  *  Textual Air Quality Scale is PM10 based: Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
  */
@@ -146,10 +146,10 @@ void readSensors() {
   
   // Read sensor data
   if (millis() - lastReadTime >= readIntervalMillis()) {
-    Serial.println("------------------------DATA------------------------");
+    Serial.println("------------------------------DATA------------------------------");
     readPMS();
     readBME();
-    Serial.println("----------------------------------------------------");
+    Serial.println("----------------------------------------------------------------");
     if (!noSleep) {
       Serial.print("System: Air Quality Sensor will sleep until ");
       Serial.print(wakeInterval);
@@ -177,7 +177,9 @@ void readSensors() {
 
 // Function that reads data from the PMS7003
 void readPMS() {
-  pms.requestRead();
+  while (pmsSerial.available()) { pmsSerial.read(); }
+  pms.requestRead(); // Now get the real data
+  
   if (pms.readUntil(data)) {
     int PM1 = data.PM_AE_UG_1_0;
     int PM2_5 = data.PM_AE_UG_2_5;
@@ -284,7 +286,21 @@ void readBME() {
   }
 }
 
-// Function that's called once a user sets the interval 
+void pmsPower(bool state) {
+  if (state) {
+    pms.wakeUp();
+    pms.passiveMode();
+    pmsWoken = true;
+  } else {
+    pmsSerial.flush();
+    unsigned long now = millis();
+    while(millis() < now + 100);
+    pmsWoken = false;
+    pms.sleep();
+    
+  }
+}
+ 
 void controlInterval(int interval) {
   if (interval > 5 && interval <= 60) {
     sendInterval = interval;
@@ -321,7 +337,6 @@ void controlInterval(int interval) {
   }
 }
 
-// Function (called at boot in setup()) that publishes the current data sending interval value to AllThingsTalk
 void publishInterval() {
   Serial.println("System: Publishing the actual device reporting interval to AllThingsTalk");
   device.send(INTERVAL_ASSET, sendInterval);
@@ -335,21 +350,6 @@ int readIntervalMillis() {
 int readIntervalSeconds() {
   int result = (sendInterval * 60) / averageSamples;
   return result;
-}
-
-void pmsPower(bool state) {
-  if (state) {
-    pms.wakeUp();
-    pms.passiveMode();
-    pmsWoken = true;
-  } else {
-    pmsSerial.flush();
-    //while (pmsSerial.available()) { pmsSerial.read(); }
-    delay(100);
-    pmsWoken = false;
-    pms.sleep();
-    
-  }
 }
 
 void getCredentials() {
@@ -403,7 +403,6 @@ void credentialsSDK() {
   device = Device(wifiCreds, deviceCreds);
 }
 
-// Main function
 void configureCredentials() {
   if (Serial.available() >= 1) {
     String cmd = Serial.readString();
@@ -547,5 +546,5 @@ void restartDevice() {
 void loop() {
   readSensors(); // Read data from sensors
   device.loop(); // Keep the connection to AllThingsTalk alive
-  configureCredentials(); // Enable credentials configuration from serial interface
+  //configureCredentials(); // Enable credentials configuration from serial interface
 }
