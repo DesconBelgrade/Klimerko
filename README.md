@@ -19,15 +19,15 @@ Read on to find out how to build your own!
 
 | Version | Date | Notes |
 |--|--|--|
-| v1.3.0 | 27.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix  |
+| v1.3.0 | 27.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix; Textual values fixed  |
 | v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Firmware version reporting |
 | v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
 | v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
-| v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 - Please update firmware if you're on this version) |
+| v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 |
 | v1.1.3 | 5.11.2019 | Added Serial Monitor notification when BME280 fails to read data; Improved reliability when reconnecting to WiFi/AllThingsTalk and when loading credentials from memory |
 | v1.1.2 | 23.10.2019 | Fixed issue where quitting device credentials configuration dialog would still save changes for that session |
 | v1.1.1 | 23.10.2019 | Fixed configuring credentials on Linux |
-| v1.1.0 | 20.10.2019 | Added ability to configure device credentials using Serial Monitor (no need to re-flash the whole device just to change credentials); Updated textual form "Air Quality" reporting to use PM 10 values (based on Republic of Serbia Regulations) instead of PM 2.5 used previously  |
+| v1.1.0 | 20.10.2019 | Ability to configure credentials using Serial Monitor (no need to re-flash the whole device anymore); Updated textual form "Air Quality" reporting to use PM 10 values |
 | v1.0.0 | 3.10.2019 | The initial firmware written for Descon 5.0 (2019) workshop |
 
 # Table of Contents
@@ -290,15 +290,15 @@ All data from your Klimerko is visualized here:
 
 - Air Quality (in textual form)  
     Value shown will also have a corresponding background color.  
-    This value is derived from PM10 values (as per regulations of Republic of Serbia):
+    This value is derived from PM10 values (as per [regulations of Republic of Serbia](http://www.amskv.sepa.gov.rs/kriterijumi.php)):
     
 | Textual Value | PM 10 Value |
 | ------------- | ----------- |
-| Excellent     | 0 - 25      |
-| Good          | 26 - 35     |
-| Acceptable    | 36 - 50     |
-| Polluted      | 51 - 75     |
-| Very Polluted | 75 >        |
+| Excellent | 0 - 20 |
+| Good | 21 - 40 |
+| Acceptable | 41 - 50 |
+| Polluted | 51 - 100 |
+| Very Polluted | 100 > |
 
 - Actual PM1, PM2.5, PM10, Temperature, Humidity and Pressure data
 - Historical PM1, PM2.5, PM10, Temperature, Humidity and Pressure data

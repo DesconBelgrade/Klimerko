@@ -3,10 +3,10 @@
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
  *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
  *  
- *  This is a continued effort from https://descon.me/2018/winning-product/.
- *  Supported by ISOC (Internet Society, Belgrade Chapter) https://isoc.rs and Beogradska Otvorena Skola www.bos.rs.
- *  Project is powered by IoT Cloud Services and Communications SDK from AllThingsTalk // www.allthingstalk.com/
- *  3D Case for the device is designed and manufactured by Dusan Nikic // nikic.dule@gmail.com
+ *  This is a continued effort from https://descon.me/2018/winning-product/
+ *  Supported by ISOC (Internet Society, Belgrade Chapter) // https://isoc.rs
+ *  IoT Cloud Services and Communications SDK by AllThingsTalk // www.allthingstalk.com/
+ *  3D Case for the device designed and manufactured by Dusan Nikic // nikic.dule@gmail.com
  *  ------------------------------------------------------------------------------------------------------------
  *  
  *  This sketch is downloaded from https://github.com/DesconBelgrade/Klimerko
@@ -16,7 +16,8 @@
  *  opening Serial Monitor, restarting the device (RST button on NodeMCU), writing "config" in Serial Monitor 
  *  and following the instructions shown in Serial Monitor.
  *  
- *  Textual Air Quality Scale is PM10 based: Excellent (0-25), Good (26-35), Acceptable (36-50), Polluted (51-75), Very Polluted (Over 75)
+ *  Textual Air Quality Scale is based on PM10 criteria defined by RS Government (http://www.amskv.sepa.gov.rs/kriterijumi.php)
+ *  Odlican (0-20), Dobar (21-40), Prihvatljiv (41-50), Zagadjen (51-100), Jako Zagadjen (Over 100)
  */
 
 #include "src/AllThingsTalk/AllThingsTalk_WiFi.h"
@@ -28,7 +29,7 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
-String firmwareVersion = "1.3.0 BETA 2";
+String firmwareVersion = "1.3.0";
 int sendInterval = 15; // [MINUTES] Default sensor data sending interval
 int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
 int averageSamples = 10; // Number of samples used to average values from sensors
@@ -190,28 +191,30 @@ void readPMS() {
     avgPM10 = pm10.reading(PM10);
 
     // Assign a text value of how good the air is based on current value
-    if (PM10 <= 25) {
+    // http://www.amskv.sepa.gov.rs/kriterijumi.php
+    if (PM10 <= 20) {
       airQualityRaw = "Excellent";
-    } else if (PM10 >= 26 && PM10 <= 35) {
+    } else if (PM10 >= 21 && PM10 <= 40) {
       airQualityRaw = "Good";
-    } else if (PM10 >= 36 && PM10 <= 50) {
+    } else if (PM10 >= 41 && PM10 <= 50) {
       airQualityRaw = "Acceptable";
-    } else if (PM10 >= 51 && PM10 <= 75) {
+    } else if (PM10 >= 51 && PM10 <= 100) {
       airQualityRaw = "Polluted";
-    } else if (PM10 > 76) {
+    } else if (PM10 > 100) {
       airQualityRaw = "Very Polluted";
     }
 
     // Assign a text value of how good the air is based on average value
-    if (avgPM10 <= 25) {
+    // http://www.amskv.sepa.gov.rs/kriterijumi.php
+    if (avgPM10 <= 20) {
       airQuality = "Excellent";
-    } else if (avgPM10 >= 26 && avgPM10 <= 35) {
+    } else if (avgPM10 >= 21 && avgPM10 <= 40) {
       airQuality = "Good";
-    } else if (avgPM10 >= 36 && avgPM10 <= 50) {
+    } else if (avgPM10 >= 41 && avgPM10 <= 50) {
       airQuality = "Acceptable";
-    } else if (avgPM10 >= 51 && avgPM10 <= 75) {
+    } else if (avgPM10 >= 51 && avgPM10 <= 100) {
       airQuality = "Polluted";
-    } else if (avgPM10 > 76) {
+    } else if (avgPM10 > 100) {
       airQuality = "Very Polluted";
     }
 
