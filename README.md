@@ -329,6 +329,7 @@ This step is for those who've already built their Klimerko and wish to update it
   - If you're running **MacOS**, choose **/dev/cu.SLAB_USBtoUART** (if you don't see it, install [the driver first](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip))
 - Go to *Tools* > *Erase Flash* > *Only Sketch*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
+- ***Optional:*** Open Serial Monitor (*Tools > Serial Monitor*), set it to 115200 baud rate and check Klimerko diagnostic output to see if everything is working.
 
 Awesome! Your Klimerko is now updated to the latest version!
 
