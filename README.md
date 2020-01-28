@@ -322,6 +322,11 @@ This step is for those who've already built their Klimerko and wish to update it
 - [Download the latest Klimerko Firmware](https://github.com/DesconBelgrade/Klimerko/archive/master.zip)
 - Unzip the file, open it and go to “*Klimerko_Firmware*” folder
 - Open “*Klimerko_Firmware.ino*” with Arudino IDE
+- Make sure you're running at least Arduino IDE version 1.8.10
+  - If on Windows, click *Help > About Arduino* to check version
+  - If on MacOS, click *Arduino > About Arduino* to check version
+  - In case you're on a version older than 1.8.10, simply download [Arduino IDE](https://www.arduino.cc/en/Main/software) again and install it.
+    - If on Windows, choose “*Windows installer, for Windows XP and up*” when downloading
 - Go to *Tools* > *Board* > *Boards Manager*
 - Search for “*esp8266*” by *ESP8266 Community*
   -  Even if you already have this installed, you need to have the latest version, so click the **Update** button next to the result if you see it. If not, you probably already have the latest version.
