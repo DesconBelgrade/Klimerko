@@ -17,7 +17,7 @@
  *  and following the instructions shown in Serial Monitor.
  *  
  *  Textual Air Quality Scale is based on PM10 criteria defined by RS Government (http://www.amskv.sepa.gov.rs/kriterijumi.php)
- *  Odlican (0-20), Dobar (21-40), Prihvatljiv (41-50), Zagadjen (51-100), Jako Zagadjen (Over 100)
+ *  Excellent (0-20), Good (21-40), Acceptable (41-50), Polluted (51-100), Very Polluted (Over 100)
  */
 
 #include "src/AllThingsTalk/AllThingsTalk_WiFi.h"
