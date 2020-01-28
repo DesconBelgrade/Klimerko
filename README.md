@@ -330,6 +330,7 @@ This step is for those who've already built their Klimerko and wish to update it
 - Go to *Tools* > *Board* > *Boards Manager*
 - Search for “*esp8266*” by *ESP8266 Community*
   -  Even if you already have this installed, you need to have the latest version, so click the **Update** button next to the result if you see it. If not, you probably already have the latest version.
+  - If for some reason you don't see the search result, make sure you've [installed ESP8266 support](#installing-esp8266-support)
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
 - Go to *Tools* > *Port* and you should see **COM** and a number next to it. Choose it.
