@@ -19,7 +19,7 @@ Read on to find out how to build your own!
 
 | Version | Date | Notes |
 |--|--|--|
-| v1.3.0 | 27.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix; Textual values fixed  |
+| v1.3.0 | 28.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix; Textual values fixed  |
 | v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Firmware version reporting |
 | v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
 | v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
