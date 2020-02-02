@@ -1,5 +1,3 @@
-
-
 # “Klimerko” Air Quality Monitoring Station
 
 <img align="right" width="300" height="200" src="extras/klimerko-tile.png">
