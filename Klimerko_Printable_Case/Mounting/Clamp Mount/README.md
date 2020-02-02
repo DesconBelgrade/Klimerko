@@ -1,2 +1,1 @@
-Printed with 0.28 mm 
-Infil 20%
+Printed with 0.28 mm, Infill 20%
