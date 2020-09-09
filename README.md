@@ -1,5 +1,9 @@
 # “Klimerko” Air Quality Monitoring Station
 
+Join the development discussion on our Matrix room: [#klimerko:matrix.org](https://matrix.to/#/!cIYLKLHZVnvAgFaZrg:matrix.org?via=matrix.org)
+
+![Matrix](https://img.shields.io/matrix/klimerko:matrix.org?server_fqdn=matrix.org&style=social)
+
 <img align="right" width="300" height="200" src="extras/klimerko-tile.png">
 
 "Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
