@@ -4,31 +4,15 @@
 
 "Klimerko" is the continuation of the [Winning Project from Descon 4.0 2018](https://descon.me/2018/winning-product/).  
 
-See live data from all "Klimerko" devices in your area by going to [klimerko.org](http://klimerko.org/)
+See live data from all "Klimerko" devices in your area by going to [vazduhgradjanima.rs](https://vazduhgradjanima.rs)
 
 This is a DIY air quality measuring device that costs about $30 to build (even less without the 3D Case) and measures [Particulate Matter](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics) in the air as well as Temperature, Humidity and Pressure.  
-It publishes data to your [AllThingsTalk Maker Cloud](https://www.allthingstalk.com/maker) (free) where you're able to visualize data, see it historically and control the device.  
-Read on to find out how to build your own, or watch this video that covers the whole process:  
-  
-[![YouTube Video: Kako napraviti klimerka?](extras/klimerko-howto-video-thumbnail.jpg)](https://www.youtube.com/watch?v=D9VHvuHtT14)
+It publishes data to your [AllThingsTalk Maker Cloud](https://www.allthingstalk.com/maker) (free) where you're able to visualize data, see it historically and control the device.   
+Read on to find out how to build your own!
 
 
-## Firmware Version History
+**To update your existing Klimerko's Firmware, go to [Updating Firmware](#updating-firmware)**.
 
-**To update your existing Klimerko's Firmware, go to [Updating Firmware](#updating-firmware)**
-
-| Version | Date | Notes |
-|--|--|--|
-| v1.3.0 | 28.1.2020 | Sensor data averaging system; 5 minutes minimum reporting interval; Erratic AQ readings fix; Textual values fixed  |
-| v1.2.0 | 8.1.2020 | Utilize new publicly released AllThingsTalk SDK; Firmware version reporting |
-| v1.1.6 | 6.1.2020 | Temperature sensor (BME280) calibration |
-| v1.1.5 | 12.12.2019 | Fixed issue with unique device ID generation that could prevent the device to connect to AllThingsTalk |
-| v1.1.4 | 6.11.2019 | Improved PMS7003 reading stability; Fixed bug with payload sending that was introduced in v1.1.3 |
-| v1.1.3 | 5.11.2019 | Added Serial Monitor notification when BME280 fails to read data; Improved reliability when reconnecting to WiFi/AllThingsTalk and when loading credentials from memory |
-| v1.1.2 | 23.10.2019 | Fixed issue where quitting device credentials configuration dialog would still save changes for that session |
-| v1.1.1 | 23.10.2019 | Fixed configuring credentials on Linux |
-| v1.1.0 | 20.10.2019 | Ability to configure credentials using Serial Monitor (no need to re-flash the whole device anymore); Updated textual form "Air Quality" reporting to use PM 10 values |
-| v1.0.0 | 3.10.2019 | The initial firmware written for Descon 5.0 (2019) workshop |
 
 # Table of Contents
 This guide is in chronological order, so try not to skip through parts if you're not sure about it :)
@@ -60,14 +44,27 @@ This diagram shows an overview of how Klimerko works
 
 ## Hardware Required
 
-You'll need these components to follow this guide.
-Some items are clickable and you can buy them right away.
+You'll need these components to follow this guide: 
 
-- [NodeMCU](https://www.aliexpress.com/item/33053690164.html) Board *(if buying, choose the "NodeMcu v3 CP2102")*
-- [Plantower PMS7003](https://www.aliexpress.com/item/32623909733.html) Air Quality Sensor *(if buying, get the one with Bridge Board and Connector Cable)*
-    - Bridge board
-    - Connector cable
-- [Bosch BME280](https://www.aliexpress.com/item/32817286611.html) Temperature/Humidity/Pressure Sensor *(if buying, choose the "3.3V" one)*
+> Previously, some of the components below were clickable so you could buy them right away, but shipping to Balkans on some websites became 10x more expensive than the components themselves, therefore the list now only contains the names, description and a photo of the items you need to buy.  
+You can search for these components on [eBay](https://ebay.com), [Banggood](https://banggood.com), [AliExpress](https://aliexpress.com) or your local electronics store/website.
+
+- **NodeMCU (Amica, with CP2102 chip)**  
+  *Try to avoid the cheapest ones as they're using a different pinout and a weaker CHG340 chip.  
+  It should look exactly like this:*  
+  <img width="200" height="230" src="extras/nodemcu-module-example.jpg">
+
+- **Plantower PMS7003 Air Quality Sensor**  
+  Get the one with a connector and a bridge board.  
+  Should look exactly like this:  
+  <img width="270" height="200" src="extras/pms7003-module-example.png">
+
+- **Bosch BME280 Temperature/Humidity/Pressure Sensor**  
+  Make sure to get the BM**E**280 and ***not*** the cheaper BM**P**280.  
+  There are variants with 6 pins, and if you find them to be cheaper than the ones with 4 pins (as shown below), you can buy that as well - you just won't use additional 2 pins.  
+  It should look exactly like this:  
+  <img width="200" height="150" src="extras/bme280-module-example.jpg">
+
 - USB Power adapter (5V, minimum 250mA/0.25A)
 - MicroUSB Cable
 - **4x** Wires (each at least 13cm long)
@@ -279,7 +276,7 @@ This needs to be done since air pollution readings are different on different he
 ## Share Data
 
 Go to your “Decon Klimerko” device, click “Settings” in the upper right corner, go to “Share data” and share your data with “**Vazduh gradjanima**”.  
-Your device will now be visible on the map at [klimerko.org](http://klimerko.org/) and can help the community be aware of the air quality!  
+Your device will now be visible on the map at [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and can help the community be aware of the air quality!  
 
 ![Cloud Map](extras/cloud-map.png) 
 
@@ -313,7 +310,7 @@ All data from your Klimerko is visualized here:
     You can use this slider to control how often your Klimerko reports its data to AllThingsTalk. The default and recommended value is 15 minutes.
 
 **You’re done!**  
-Enjoy your device and feel free to visit [klimerko.org](http://klimerko.org/) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
+Enjoy your device and feel free to visit [vazduhgradjanima.rs](https://vazduhgradjanima.rs) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
 # Updating Firmware
 This step is for those who've already built their Klimerko and wish to update its firmware to the latest version.
