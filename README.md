@@ -50,8 +50,8 @@ You'll need these components to follow this guide:
 You can search for these components on [eBay](https://ebay.com), [Banggood](https://banggood.com), [AliExpress](https://aliexpress.com) or your local electronics store/website.
 
 - **NodeMCU (Amica, with CP2102 chip)**  
-  *Try to avoid the cheapest ones as they're using a different pinout and a weaker CHG340 chip.  
-  It should look exactly like this:*  
+  Try to avoid the cheapest ones as they're using a different pinout and a weaker CHG340 chip.  
+  It should look exactly like this:  
   <img width="200" height="230" src="extras/nodemcu-module-example.jpg">
 
 - **Plantower PMS7003 Air Quality Sensor**  
