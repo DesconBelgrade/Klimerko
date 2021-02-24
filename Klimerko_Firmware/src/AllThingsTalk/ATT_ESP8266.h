@@ -278,7 +278,7 @@ void Device::disconnect() {
 
 // Main method to connect to WiFi
 void Device::connectWiFi() {
-    if (WiFi.status() != WL_CONNECTED) {
+    if (!WiFi.localIP().isSet()) {
         connectionLedFadeStart();
         WiFi.mode(WIFI_STA);
         if (wifiHostnameSet) {
@@ -289,7 +289,7 @@ void Device::connectWiFi() {
         debug("Connecting to WiFi:", ' ');
         debug(wifiCreds->getSsid(), '.');
         WiFi.begin(wifiCreds->getSsid(), wifiCreds->getPassword());
-        while (WiFi.status() != WL_CONNECTED) {
+        while (!WiFi.localIP().isSet()) {
             debug("", '.');
             delay(10000);
         }
@@ -307,7 +307,7 @@ void Device::connectWiFi() {
 // Checks and recovers WiFi if lost
 void Device::maintainWiFi() {
     if (!disconnectedWiFi) {
-        if (WiFi.status() != WL_CONNECTED) {
+        if (!WiFi.localIP().isSet()) {
             connectionLedFadeStart();
             debug("WiFi Connection Dropped! Reason:", ' ');
             switch(WiFi.status()) {
@@ -349,7 +349,7 @@ void Device::maintainWiFi() {
 
 // Main method for disconnecting from WiFi
 void Device::disconnectWiFi() {
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.localIP().isSet()) {
         disconnectAllThingsTalk();
         WiFi.disconnect();
         disconnectedWiFi = true;
@@ -516,7 +516,7 @@ void Device::connectAllThingsTalk() {
         connectWiFi(); // WiFi needs to be present of course
         debug("Connecting to AllThingsTalk", '.');
         while (!client.connected()) {
-            if (WiFi.status() != WL_CONNECTED) {
+            if (!WiFi.localIP().isSet()) {
                 debug(" "); // Cosmetic only.
                 maintainWiFi(); // In case WiFi connection is lost while connecting to ATT
             }
@@ -605,7 +605,7 @@ void Device::disconnectAllThingsTalk() {
 
 // Called from loop; Reports wifi signal to ATTalk Maker at specified interval
 void Device::reportWiFiSignal() {
-    if (rssiReporting && WiFi.status() == WL_CONNECTED) {
+    if (rssiReporting && WiFi.localIP().isSet()) {
         if (millis() - rssiPrevTime >= rssiReportInterval*1000) {
             send(wifiSignalAsset, wifiSignal());
             rssiPrevTime = millis();
@@ -861,7 +861,7 @@ void Device::mqttCallback(char* p_topic, byte* p_payload, unsigned int p_length)
 
 // Send data as CBOR
 bool Device::send(CborPayload &payload) {
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.localIP().isSet()) {
         if (client.connected()) {
             char topic[128];
             snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceCreds->getDeviceId(), "/state");
@@ -880,7 +880,7 @@ bool Device::send(CborPayload &payload) {
 
 // Send data as Binary Payload
 bool Device::send(BinaryPayload &payload) {
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.localIP().isSet()) {
         if (client.connected()) {
             char topic[128];
             snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceCreds->getDeviceId(), "/state");
@@ -898,7 +898,7 @@ bool Device::send(BinaryPayload &payload) {
 }
 
 template<typename T> bool Device::send(char *asset, T payload) {
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.localIP().isSet()) {
         if (client.connected()) {
             char topic[128];
             snprintf(topic, sizeof topic, "%s%s%s%s%s", "device/", deviceCreds->getDeviceId(), "/asset/", asset, "/state");

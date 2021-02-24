@@ -16,6 +16,8 @@ CborPayload::~CborPayload() {
 }
 
 void CborPayload::reset() {
+    delete writer;
+    delete output;
     output = new CborStaticOutput(buffer, capacity);
     writer = new CborWriter(*output);
     assetCount = 0;

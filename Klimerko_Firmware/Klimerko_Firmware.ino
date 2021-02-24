@@ -29,32 +29,32 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
-String firmwareVersion = "1.3.0";
-int sendInterval = 15; // [MINUTES] Default sensor data sending interval
-int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
-int averageSamples = 10; // Number of samples used to average values from sensors
-int deviceRestartWait = 3; // Seconds to wait when restarting NodeMCU
-bool noSleep = false;
-// Pins to which the PMS7003 is connected to
-const uint8_t pmsTX = D5;
-const uint8_t pmsRX = D6;
-const char *airQuality, *airQualityRaw;
-unsigned long currentTime, lastReadTime, lastSendTime;
-int avgTemperature, avgHumidity, avgPressure, avgPM1, avgPM25, avgPM10;
+String         firmwareVersion   = "1.3.1";
+uint8_t        sendInterval      = 15; // [MINUTES] Default sensor data sending interval
+const uint8_t  wakeInterval      = 30; // [SECONDS] Seconds to activate sensor before reading it
+const uint8_t  averageSamples    = 10; // Number of samples used to average values from sensors
+const uint8_t  deviceRestartWait = 3;  // Seconds to wait when restarting NodeMCU
+const uint8_t  pmsTX = D5;
+const uint8_t  pmsRX = D6;
+bool noSleep      = false;
 bool firstReading = true;
-bool pmsWoken = false;
+bool pmsWoken     = false;
+const char *airQuality, *airQualityRaw;
 String wifiName, wifiPassword, deviceId, deviceToken;
 String wifiNameTemp, wifiPasswordTemp, deviceIdTemp, deviceTokenTemp;
-int wifiName_EEPROM_begin = 0;
-int wifiName_EEPROM_end = 255;
-int wifiPassword_EEPROM_begin = 256;
-int wifiPassword_EEPROM_end = 511;
-int deviceId_EEPROM_begin = 512;
-int deviceId_EEPROM_end = 767;
-int deviceToken_EEPROM_begin = 768;
-int deviceToken_EEPROM_end = 1024;
-int EEPROMsize = 1024;
-String dataDivider = ";";
+int avgTemperature, avgHumidity, avgPressure, avgPM1, avgPM25, avgPM10;
+unsigned long  currentTime, lastReadTime, lastSendTime;
+// Memory addresses
+const uint16_t wifiName_EEPROM_begin     = 0;
+const uint16_t wifiName_EEPROM_end       = 255;
+const uint16_t wifiPassword_EEPROM_begin = 256;
+const uint16_t wifiPassword_EEPROM_end   = 511;
+const uint16_t deviceId_EEPROM_begin     = 512;
+const uint16_t deviceId_EEPROM_end       = 767;
+const uint16_t deviceToken_EEPROM_begin  = 768;
+const uint16_t deviceToken_EEPROM_end    = 1024;
+const uint16_t EEPROMsize                = 1024;
+String         dataDivider               = ";";
 // Assets to be published to
 char* PM1_ASSET         = "pm1";
 char* PM2_5_ASSET       = "pm2-5";
@@ -99,7 +99,7 @@ void setup() {
   Serial.println("");
   Serial.println(" ------------------------- Project 'KLIMERKO' ----------------------------");
   Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
-  Serial.println("|                       www.vazduhgradjanima.rs                           |");
+  Serial.println("|                           www.klimerko.org                              |");
   Serial.print("|                       Firmware Version: ");
   Serial.print(firmwareVersion);
   Serial.println("                           |");
@@ -300,7 +300,6 @@ void pmsPower(bool state) {
     while(millis() < now + 100);
     pmsWoken = false;
     pms.sleep();
-    
   }
 }
  
