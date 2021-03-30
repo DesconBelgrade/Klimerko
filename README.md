@@ -8,8 +8,9 @@ See live data from all "Klimerko" devices in your area by going to [Klimerko.org
 
 This is a DIY air quality measuring device that costs about $30 to build (even less without the 3D Case) and measures [Particulate Matter](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics) in the air as well as Temperature, Humidity and Pressure.  
 It publishes data to your [AllThingsTalk Maker Cloud](https://www.allthingstalk.com/maker) (free) where you're able to visualize data, see it historically and control the device.   
-Read on to find out how to build your own!
-
+Read on to find out how to build your own, or watch this video that covers the whole process:  
+  
+[![YouTube Video: Kako napraviti klimerka?](extras/klimerko-howto-video-thumbnail.jpg)](https://www.youtube.com/watch?v=D9VHvuHtT14)
 
 **To update your existing Klimerko's Firmware, go to [Updating Firmware](#updating-firmware)**.
 
