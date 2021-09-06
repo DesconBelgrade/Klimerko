@@ -217,7 +217,8 @@ ESP8266 is the "brains" or "processor" of the NodeMCU, but Arduino IDE doesn't s
 - Go to *File* > *Preferences*
 - In the *Additional Boards Manager URLs*, enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` and click *OK*
 - Go to *Tools* > *Board* > *Boards Manager*
-- Search for and install “*esp8266*” by *ESP8266 Community*
+- Search for “*esp8266*” by *ESP8266 Community*
+- In the left corner of the result, click the dropdown menu and select Version ***2.7.4*** and click ***Install*** *(this step is required because versions newer than 2.7.4 have compatibility issues)*
 - Once done, close Arduino IDE
 
 ## Uploading Firmware
