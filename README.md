@@ -401,3 +401,10 @@ Awesome! Your Klimerko is now updated to the latest version!
 	- The NodeMCU has a blue LED right above the small shiny metallic box. That LED blinks for a brief moment right when you plug the device into power. If yours doesn't blink when you plug it in, check the USB cable (and try another one if you have it). If that makes no difference, check the power supply (the adapter).
 	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 
 	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
+- Factory Reset your Klimerko
+  - Press and hold the ***FLASH*** button on the NodeMCU board for at least 15 seconds.
+  - The blue LED should flash rapidly for 2 seconds and then stay on.
+  - Your Klimerko has now deleted all credentials from itself and will restart shortly.
+  - Once the LED turns off, Klimerko has been restarted.
+  - The LED will now blink slowly, indicating it's trying to connect to WiFi and AllThingsTalk (but it can't, since there's no credentials)
+  - You can now follow [Configuring Klimerko Credentials](#configuring-klimerko-credentials) again to enter the credentials.
