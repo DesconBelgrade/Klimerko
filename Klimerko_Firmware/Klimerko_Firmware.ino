@@ -145,6 +145,7 @@ void sensorLoop() { // Reads and publishes sensor data and wakes up pms sensor i
   // Send average sensor data
   if (millis() - lastSendTime >= sendInterval * 60000) {
     publishSensorData();
+    lastSendTime = millis();
   }
 }
 
@@ -209,7 +210,6 @@ void publishSensorData() {
   } else {
     Serial.println("[DATA] Can't send data because Klimerko is not connected to WiFi");
   }
-  lastSendTime = millis();
 }
 
 void readPMS() { // Function that reads data from the PMS7003
@@ -503,7 +503,6 @@ void saveCredentials() { // Saves new ATT credentials in memory and connects to 
 }
 
 void connectAfterNewCredentials() {
-  //connectWiFi();
   connectMQTT();
 }
 
@@ -709,12 +708,12 @@ bool connectMQTT() {
     Serial.println("[MQTT] Connecting to AllThingsTalk...");
     if (mqtt.connect(klimerkoID, deviceToken, MQTT_PASSWORD)) {
       Serial.println("[MQTT] Connected!");
-      mqttSubscribeTopics();
-      publishInterval();
       if (mqttConnectionLost) {
         mqttConnectionLost = false;
         ledSuccessBlink = true;
       }
+      mqttSubscribeTopics();
+      publishInterval();
       return true;
     } else {
       Serial.print("[MQTT] Connection Failed, Reason: ");
@@ -827,6 +826,15 @@ void initWiFi() {
 //  }
 }
 
+void initAvg() {
+  pm1.begin();
+  pm25.begin();
+  pm10.begin();
+  temp.begin();
+  hum.begin();
+  pres.begin();
+}
+
 void initPins() {
   pinMode(BUTTON_PIN, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -849,6 +857,7 @@ void setup() {
   Serial.print(sendInterval);
   Serial.println(" minutes. |");
   Serial.println(" --------------------------------------------------------------------------------");
+  initAvg();
   initPins();
   initPMS();
   initBME();
@@ -856,12 +865,6 @@ void setup() {
   getCredentials();
   initWiFi();
   initMQTT();
-  pm1.begin();
-  pm25.begin();
-  pm10.begin();
-  temp.begin();
-  hum.begin();
-  pres.begin();
   Serial.println("");
 }
 
