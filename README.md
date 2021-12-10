@@ -326,7 +326,10 @@ All data from your Klimerko is visualized here:
 Enjoy your device and feel free to visit [Klimerko.org](https://klimerko.org) and see your device along with all the other devices just like yours that are helping others be aware of the air pollution in your area!
 
 # Updating Firmware
-This step is for those who've already built their Klimerko and wish to update its firmware to the latest version.
+This step is for those who've already built their Klimerko and wish to update its firmware to the latest version.  
+Klimerko saves your WiFi and AllThingsTalk credentials in memory, so updating the firmware doesn't delete your credentials **UNLESS** you're updating from a version before 2.0.0 ***to*** 2.0.0 or later.  
+If that's the case, you will need to enter your credentials again by following the [Configuring Klimerko Credentials](#configuring-klimerko-credentials) part.  
+Once you're on version 2.0.0, updating to anything newer won't remove your credentials.
 
 ## Updating Wirelessly (OTA)
 > Use this method if your Klimerko is currently on firmware version 2.0.0 or above.
