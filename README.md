@@ -183,32 +183,16 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 
 
 # Cloud Platform (1/2)
-- Head over to https://maker.allthingstalk.com/signup and create an account
+- Head over to [AllThingsTalk Maker](https://maker.allthingstalk.com) and create a free account
 - Sign in
 - Click “Playground”
-    
-![Cloud Grounds](extras/cloud-grounds.png)
-
-- In *Devices*, click *+ New Device*
-    
-![Cloud Devices](extras/cloud-devices.png)
-
+- In "Devices", click "+ New Device"
 - Choose “Descon Klimerko”
-    
-![Cloud Device Selection](extras/cloud-device-selection.png)
-
 - Click “Settings” in the upper right corner
-    
-![Cloud Settings](extras/cloud-settings.png)
-
 - Click “Authentication”
-    
-![Cloud Authentication](extras/cloud-authentication.png)
-
 - Write down your **Device ID** and **Device Token**
-    
-![Cloud Credentials](extras/cloud-credentials.png)
 
+![Cloud Credentials](extras/allthingstalk-credentials.gif)
 
 
 # Software
