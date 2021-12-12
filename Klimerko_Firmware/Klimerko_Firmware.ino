@@ -740,12 +740,12 @@ bool connectMQTT() {
 }
 
 void maintainMQTT() {
+  mqtt.loop();
   if (mqtt.connected()) {
     if (mqttConnectionLost) {
       mqttConnectionLost = false;
       publishDiagnosticData();
     }
-    mqtt.loop();
   } else {
     if (!mqttConnectionLost) {
       if (wifiConnectionLost) {
