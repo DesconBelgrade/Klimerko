@@ -552,14 +552,15 @@ void wifiConfigStart() { // Starts WiFi Configuration Portal
   if (!wm.getConfigPortalActive()) {
     Serial.println("[WIFICONFIG] Entering WiFi Configuration Mode...");
     wm.startConfigPortal(klimerkoID, wifiConfigPortalPassword);
-    Serial.print("[WIFICONFIG] WiFi Configuration Mode Active! Use your phone/computer to connect to WiFi network named '");
-    Serial.print(klimerkoID);
-    Serial.println("' and to configure your Klimerko.");
+    Serial.println("[WIFICONFIG] WiFi Configuration Mode Activated!");
   } else {
-    Serial.print("[WIFICONFIG] WiFi Configuration Mode is already active! Use your phone/computer to connect to WiFi network named '");
-    Serial.print(klimerkoID);
-    Serial.println("' and to configure your Klimerko.");
+    Serial.println("[WIFICONFIG] WiFi Configuration Mode already active!");
   }
+  Serial.print("[WIFICONFIG] Use your computer or smartphone to connect to WiFi network '");
+  Serial.print(klimerkoID);
+  Serial.print("' (password: '");
+  Serial.print(wifiConfigPortalPassword);
+  Serial.println("') to configure your Klimerko.");
 }
 
 void wifiConfigStop() { // Stops WiFi Configuration Portal
@@ -772,14 +773,14 @@ bool initMQTT() {
 }
 
 bool connectWiFi() {
-  Serial.println("[WiFi] Trying to connect...");
+  Serial.print("[WiFi] Connecting to WiFi... ");
   if(!wm.autoConnect(klimerkoID, wifiConfigPortalPassword)) {
-    Serial.print("[WiFi] Failed to connect! Reason: ");
+    Serial.print("Failed! Reason: ");
     Serial.println(WiFi.status());
     wifiConnectionLost = true;
     return false;
   } else {
-    Serial.print("[WiFi] Successfully Connected! IP: ");
+    Serial.print("Connected! IP: ");
     Serial.println(WiFi.localIP());
     wifiConnectionLost = false;
     ledSuccessBlink = true;
