@@ -371,44 +371,63 @@ This only applies to aforementioned cases due to changes in how data is stored i
 Awesome! Your Klimerko is now updated to the latest version!
 
 # Troubleshooting
-- Before anything else, make sure you've updated your Klimerko to the newest Firmware by following the [Updating Firmware](#updating-firmware) section.
-- To see what's going on under the hood, use the Serial Monitor tool provided in Arduino IDE:
+## Update to newest firmware
+Before anything else, make sure you've updated your Klimerko to the newest Firmware by following the [Updating Firmware](#updating-firmware) section.
+
+## Use Serial Monitor to get more info
+To see what's going on under the hood, use the Serial Monitor tool provided in Arduino IDE:
   - Connect your Klimerko to your computer
   - Open Arduino IDE
   - Select *Tools > Port* and select the correct port
   - Go to *Tools > Serial Monitor* in Arduino IDE
-  - You will now see diagnostic output from your Klimerko.
-- If your device is showing unintelligible text in Serial Monitor:
-	- Make sure your Serial Monitor is set to baud rate of 115200 (set this in the bottom right corner of Serial Monitor)
-- If you're having compiling issues (orange errors in the bottom of Arduino IDE), make sure that:
-	- Your Arduino IDE is at least version **1.8.10**
-	- You've downloaded the latest firmware from https://github.com/DesconBelgrade/Klimerko/archive/master.zip
-	- You've selected the correct board and port as shown [here](#upload-firmware)
-    - You're running the latest version of ESP8266 Core
-      - In Arduino IDE, go to *Tools* > *Board* > *Boards Manager*
-      - Search for “*esp8266*” by *ESP8266 Community*
-      - Click the **Update** button shown next to the result (if you don't see it, you're probably running the latest version).
-- If Klimerko can't see your WiFi network:
+  - You will now see diagnostic output from your Klimerko.  
+
+If your device is showing unintelligible text in Serial Monitor:
+  - Make sure your Serial Monitor is set to baud rate of 115200 (set this in the bottom right corner of Serial Monitor)  
+
+## Compilation issues
+If you're having compiling issues (orange errors in the bottom of Arduino IDE), make sure that:
+  - Your Arduino IDE is at least version **1.8.10**
+  - You've downloaded the latest firmware from https://github.com/DesconBelgrade/Klimerko/archive/master.zip
+  - You've selected the correct board and port as shown [here](#upload-firmware)
+  - You're running the latest version of ESP8266 Core
+    - In Arduino IDE, go to *Tools* > *Board* > *Boards Manager*
+    - Search for “*esp8266*” by *ESP8266 Community*
+    - Click the **Update** button shown next to the result (if you don't see it, you're probably running the latest version).
+
+## Klimerko can't see WiFi network
   - Make sure the network you're trying to connect your Klimerko to is a 2.4GHz network, and not a 5GHz one as NodeMCU only supports 2.4GHz.
   - Make sure you're in range.
-- If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU constantly blinking slowly):
-	- Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
+
+## Can't connect to Klimerko to configure it
+If you can't connect to your Klimerko when it's in WiFi Configuration Mode or you can't open WiFi Configuration Portal (192.168.4.1):
+  - Disconnect and reconnect to "KLIMERKO-XXX" WiFi Access Point and try again
+  - Forget the "KLIMERKO-XXX" WiFi network on your device and try connecting again (password is "ConfigMode")
+  - Turn off WiFi on your device, wait a few seconds, and then turn it back on and try again
+
+## Klimerko isn't connecting to WiFi or AllThingsTalk
+If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU constantly blinking slowly):
+  - Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
   - Turn on WiFi Configuration Mode on your Klimerko by pressing and holding the **FLASH** button on the NodeMCU board.  
   Connect to your Klimerko using WiFi and once the WiFi Configuration Portal is open, you should see the WiFi connection status at the bottom of the page.
   - Make sure Klimerko is not too far away from your Router.
   - Make sure your Router has internet access.
-- If your device is connected, but some assets are not being updated (or only "Interval", "WiFi Signal" and "Firmware Version" assets are being updated):
+
+## Assets not being updated
+If your device is connected, but some assets are not being updated (or only "Interval", "WiFi Signal" and "Firmware Version" assets are being updated):
   - This means one of your sensors isn't connected.
   - If assets "PM1", "PM2.5", "PM10" and "Air Quality" aren't being updated, your PMS7003 sensor isn't connected properly.
   - If assets "Temperature", "Humidity" and "Pressure" aren't being updated, your BME280 sensor isn't connected properly.
   - [Check your wiring](#hardware-assembly) to make sure everything is connected properly.
   - Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device.
   - Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (only 2mm or less should be exposed before soldering) and solder it back.
-- If it seems your device won't turn on:
-	- The NodeMCU has a blue LED right above the small shiny metallic box. That LED blinks for a brief moment right when you plug the device into power. If yours doesn't blink when you plug it in, check the USB cable (and try another one if you have it). If that makes no difference, check the power supply (the adapter).
-	- Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 
-	- Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
-- Factory Reset your Klimerko:
+
+## Klimerko won't turn on
+  - The NodeMCU has a blue LED right above the small shiny metallic box. That LED blinks for a brief moment right when you plug the device into power. If yours doesn't blink when you plug it in, check the USB cable (and try another one if you have it). If that makes no difference, check the power supply (the adapter).
+  - Make sure that there's no solder between any two pins on the board (either the NodeMCU or the BME280 sensor). If this is the case, it is causing a short-circuit and could break the device. 
+  - Make sure that you haven't removed too much insulation from the wires. In this case, one wire could be touching another wire with the exposed part, causing a short-circuit. If that's the case, de-solder the wire, cut it shorter (so only 2mm or less is exposed) and solder it back.
+
+## Factory Reset your Klimerko
   - Press and hold the ***FLASH*** button on the NodeMCU board for at least 15 seconds.
   - The blue LED should flash rapidly for 2 seconds and then stay on.
   - Your Klimerko has now deleted all credentials from itself and will restart shortly.
