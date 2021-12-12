@@ -199,7 +199,7 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 For all of the steps below, you'll need Arduino IDE (Integrated Development Environment).  
 This is a tool that's used to send the "firmware" or "program" to your device.  
 
-> If you already have Arduino IDE, make sure it's **at least** version 1.8.10
+> If you already have Arduino IDE, make sure it's **at least** version 1.8.15
 
 - Download and install [Arduino IDE](https://www.arduino.cc/en/Main/software) 
 (choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues).
@@ -354,14 +354,13 @@ This only applies to aforementioned cases due to changes in how data is stored i
 - [Download the latest Klimerko Firmware](https://github.com/DesconBelgrade/Klimerko/archive/master.zip)
 - Unzip the file, open it and go to “*Klimerko_Firmware*” folder
 - Open “*Klimerko_Firmware.ino*” with Arudino IDE
-- Make sure you're running at least Arduino IDE version 1.8.10
+- Make sure you're running at least Arduino IDE version 1.8.15
   - If on Windows, click *Help > About Arduino* to check version
   - If on MacOS, click *Arduino > About Arduino* to check version
-  - In case you're on a version older than 1.8.10, simply download [Arduino IDE](https://www.arduino.cc/en/Main/software) again and install it.
+  - In case you're on a version older than 1.8.15, simply download [Arduino IDE](https://www.arduino.cc/en/Main/software) again and install it.
     - If on Windows, choose “*Windows installer, for Windows 7 and up*” when downloading
 - Go to *Tools* > *Board* > *Boards Manager*
-- Search for “*esp8266*” by *ESP8266 Community*
-  -  Even if you already have this installed, you need to have the latest version, so click the **Update** button next to the result if you see it. If not, you probably already have the latest version.
+- Search for “*esp8266*” by *ESP8266 Community* and click "Install" or "Update" if you already have it installed.
   - If for some reason you don't see the search result, make sure you've [installed ESP8266 support](#installing-esp8266-support)
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
@@ -390,7 +389,7 @@ If your device is showing unintelligible text in Serial Monitor:
 
 ## Compilation issues
 If you're having compiling issues (orange errors in the bottom of Arduino IDE), make sure that:
-  - Your Arduino IDE is at least version **1.8.10**
+  - Your Arduino IDE is at least version **1.8.15**
   - You've downloaded the latest firmware from https://github.com/DesconBelgrade/Klimerko/archive/master.zip
   - You've selected the correct board and port as shown [here](#upload-firmware)
   - You're running the latest version of ESP8266 Core
