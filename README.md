@@ -14,7 +14,8 @@ Continue reading to find out how to build your own, or watch the video below tha
 
 [![YouTube Video: Kako napraviti klimerka?](extras/klimerko-howto-video-thumbnail.jpg)](https://www.youtube.com/watch?v=D9VHvuHtT14)
 
-**To update your existing Klimerko, go to [Updating Firmware](#updating-firmware)**.
+**Having issues? Go to the [Troubleshooting](#troubleshooting) section.**  
+**To update your Klimerko, go to [Updating Firmware](#updating-firmware)**.
 
 # Table of Contents
 This guide is in chronological order, so try not to skip through parts if you're not sure about it.
@@ -26,12 +27,12 @@ This guide is in chronological order, so try not to skip through parts if you're
   * [PMS7003 Sensor Preparation](#pms7003-sensor-preparation)
   * [BME280 Sensor Preparation](#bme280-sensor-preparation)
   * [NodeMCU Preparation](#nodemcu-preparation)
-* [Cloud Platform (Credentials)](#cloud-platform-credentials)
+* [Cloud Platform (1/2)](#cloud-platform-12)
 * [Software](#software)
   * [Installing ESP8266 Support](#installing-esp8266-support)
   * [Uploading Firmware](#uploading-firmware)
   * [Configuring Klimerko Credentials](#configuring-klimerko-credentials)
-* [Cloud Platform (Final)](#cloud-platform-final)
+* [Cloud Platform (2/2)](#cloud-platform-22)
   * [Configure Device](#configure-device)
   * [Share Data](#share-data)
   * [Visualize Data](#visualize-data)
@@ -173,7 +174,7 @@ You should now have 8 wires coming through the circular hole leading to the Node
 Congratulations, you’ve assembled the device! Now onto the software side.
 
 
-# Cloud Platform (Credentials)
+# Cloud Platform (1/2)
 - Head over to https://maker.allthingstalk.com/signup and create an account
 - Sign in
 - Click “Playground”
@@ -206,7 +207,7 @@ Congratulations, you’ve assembled the device! Now onto the software side.
 For all of the steps below, you'll need Arduino IDE (Integrated Development Environment).  
 This is a tool that's used to send the "firmware" or "program" to your device.  
 
-> If you already have Arduino IDE, **make sure it's at least version 1.8.10**
+> If you already have Arduino IDE, make sure it's **at least** version 1.8.10
 
 - Download and install [Arduino IDE](https://www.arduino.cc/en/Main/software) 
 (choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues).
@@ -250,7 +251,7 @@ You need tell your Klimerko which credentials to use to connect to the platform 
 - Click the first **"Configure WiFi"** button.
 > ***NOTE:*** NodeMCU only supports 2.4GHz, so make sure the network you're going to connect your Klimerko to **is not** a 5GHz network.
 - A list of available WiFi Networks will be shown, along with a field to enter your AllThingsTalk Device ID and Device Token.
-- Select your WiFi network from the list (or manually enter WiFi network name if you're not in range of the network you plan to use your Klimerko on), enter your WiFi Password and copy/paste the Device ID and Device Token that you noted in previous step ([Cloud Platform Credentials](#cloud-platform-credentials))
+- Select your WiFi network from the list (or manually enter WiFi network name if you're not in range of the network you plan to use your Klimerko on), enter your WiFi Password and copy/paste the Device ID and Device Token that you noted in previous step ([Cloud Platform Credentials](#cloud-platform-12))
 - Click ***"Save"***. 
 - Klimerko has now automatically shut down the WiFi Configuration Mode (the blue LED stops shining constantly) and your computer/smartphone will disconnect from "KLIMERKO-XXX" network. The WiFi Configuration Portal will automatically close on your computer/smartphone only if it was automatically opened. Otherwise, you'll need to close the browser tab.
 - Your Klimerko will now attempt to connect to WiFi and AllThingsTalk, indicated by slow blinking of the LED light.
@@ -262,7 +263,7 @@ If it's turned on constantly, it means the WiFi Configuration Mode is currently 
 If you wish to turn off WiFi Configuration Mode without configuring your Klimerko, press the ***"FLASH"*** button on your NodeMCU quickly, once. The constant blue LED should turn off.
 
 
-# Cloud Platform (Final)
+# Cloud Platform (2/2)
 
 All of the data from your Klimerko is available on your AllThingsTalk Maker.  
 Other than raw actual and historical air quality values, you’re able to see your air quality in a textual form at a glance, see the WiFi Signal Strength of your Klimerko and control how often your Klimerko publishes data.  
@@ -327,23 +328,33 @@ Enjoy your device and feel free to visit [Klimerko.org](https://klimerko.org) an
 
 # Updating Firmware
 This step is for those who've already built their Klimerko and wish to update its firmware to the latest version.  
+
+To check what Firmware version your Klimerko is on, you can:
+  - Open your Klimerko device on your [AllThingsTalk Maker](https://maker.allthingstalk.com):  
+  The Firmware Version will be stored in the "Firmware Version" asset.  
+  If you just updated your Klimerko, it may take up to 15 minutes for the "Firmware Version" asset to be updated.
+  - Use Serial Monitor in Arduino IDE:  
+  Klimerko will output the Firmware Version in the first few lines once it boots.
+  - *Version 2.0.0 and above only:* Activate WiFi Configuration Mode  and click **Configure WiFi**:  
+  The Firmware Version will be written in the bottom part of the page.  
+  To exit WiFi Configuration Mode, go back and click "EXIT" or click the **FLASH** button once on NodeMCU.  
+
 > If you are updating from a version before 2.0.0 to version 2.0.0 or above, you'll need to [re-enter the credentials](#configuring-klimerko-credentials) once you've updated your device.  
 This only applies to aforementioned cases due to changes in how data is stored in firmwares 2.0.0 and above.
 
 ## Updating Wirelessly (OTA)
 > Use this method if your Klimerko is currently on firmware version 2.0.0 or above.
-- Download ***"Klimerko_Firmware.bin"*** from the newest release on the [Releases Page](https://github.com/DesconBelgrade/Klimerko/releases)
+- Download ***[Klimerko_Firmware.bin](https://github.com/DesconBelgrade/Klimerko/raw/master/Klimerko_Firmware/Klimerko_Firmware.bin)***
 - Connect your Klimerko to power.
 - Take off the 3D printed cover (if present).
-- Hold the ***"FLASH"*** button on the NodeMCU board for 2 seconds and then let go (Klimerko's LED should turn on and stay solid blue, indicating WiFi Configuration Mode is on).
+- Enter WiFi Configuration Mode by holding the ***"FLASH"*** button on the NodeMCU board for 2 seconds and then let go (Klimerko's LED should turn on and stay solid blue, indicating WiFi Configuration Mode is on).
 - Using your computer/smartphone, connect to WiFi Network  **"KLIMERKO-XXX"** using password **"ConfigMode"**
-- Klimerko's WiFi Configuration Portal may automatically open outside of your browser once you connect to it, but ignore it in this case.
+- Klimerko's WiFi Configuration Portal may automatically open outside of your browser once you connect to it - ignore it in this case.
 - Open the browser on your computer/smartphone and navigate to **[192.168.4.1](http://192.168.4.1)** to manually open WiFi Configuration Portal.
 - Click the  **UPDATE** button.
-- Click ***Browse*** and select the *"Klimerko_Firmware.bin"* file you downloaded earlier.
+- Click **Browse** and select the *"Klimerko_Firmware.bin"* file you downloaded earlier.
 - Click the red **UPDATE** button and wait for it to confirm that the update is finished.
 - Your Klimerko will reboot.
-
 
 ## Updating using Arduino IDE
 > Use this method if your Klimerko is on a firmware older than v2.0.0 or you're having issues with Over-The-Air updating.
@@ -407,7 +418,7 @@ If you can't connect to your Klimerko when it's in WiFi Configuration Mode or yo
 
 ## Klimerko isn't connecting to WiFi or AllThingsTalk
 If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU constantly blinking slowly):
-  - Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-credentials) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
+  - Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-12) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
   - Turn on WiFi Configuration Mode on your Klimerko by pressing and holding the **FLASH** button on the NodeMCU board.  
   Connect to your Klimerko using WiFi and once the WiFi Configuration Portal is open, you should see the WiFi connection status at the bottom of the page.
   - Make sure Klimerko is not too far away from your Router.
@@ -415,7 +426,7 @@ If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU const
 
 ## Assets not being updated
 If your device is connected, but some assets are not being updated (or only "Interval", "WiFi Signal" and "Firmware Version" assets are being updated):
-  - This means one of your sensors isn't connected.
+  - This means one or both of your sensors aren't connected.
   - If assets "PM1", "PM2.5", "PM10" and "Air Quality" aren't being updated, your PMS7003 sensor isn't connected properly.
   - If assets "Temperature", "Humidity" and "Pressure" aren't being updated, your BME280 sensor isn't connected properly.
   - [Check your wiring](#hardware-assembly) to make sure everything is connected properly.
