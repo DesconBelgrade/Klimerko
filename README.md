@@ -246,9 +246,9 @@ Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to d
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
 ## Configuring Klimerko Credentials
-You need tell your Klimerko which credentials to use to connect to the platform and to which WiFi to connect to: 
+> Since Klimerko Firmware version 2.0.0, the process of entering WiFi & Platform credentials has been immensely simplified by introducing WiFi Configuration Mode, a feature where Klimerko itself becomes a WiFi Access Point to which you can connect to using your computer or smartphone and then configure the credentials using a simple web interface that opens up automatically once you're connected to your Klimerko.  
 
-> Since Klimerko Firmware version 2.0.0, the process of entering WiFi & Platform credentials has been immensely simplified by introducing WiFi Configuration Mode, a feature where Klimerko itself becomes a WiFi Access Point to which you can connect to using your computer or smartphone and then configure the credentials using a simple web interface that opens up automatically once you're connected to your Klimerko.
+You need tell your Klimerko which credentials to use to connect to the platform and to which WiFi to connect to: 
 
 - Make sure your Klimerko is connected to power.
 - Lift your Klimerko's cover to expose the NodeMCU board.
@@ -257,9 +257,10 @@ You need tell your Klimerko which credentials to use to connect to the platform 
 - Using your computer or a smartphone, search for and connect to WiFi Network ***"KLIMERKO-XXX"*** (the X's are numbers) using password **"ConfigMode"**.
 - Your device should automatically open Klimerko's WiFi Configuration Portal. If it doesn't, navigate to **[192.168.4.1](http://192.168.4.1)** in your browser. 
 - Click the first **"Configure WiFi"** button.
-> ***NOTE:*** NodeMCU only supports 2.4GHz, so make sure the network you're going to connect your Klimerko to **is not** a 5GHz network.
 - A list of available WiFi Networks will be shown, along with a field to enter your AllThingsTalk Device ID and Device Token.
-- Select your WiFi network from the list (or manually enter WiFi network name if you're not in range of the network you plan to use your Klimerko on), enter your WiFi Password and copy/paste the Device ID and Device Token that you noted in previous step ([Cloud Platform Credentials](#cloud-platform-12))
+  > NodeMCU only supports 2.4GHz, so make sure the network you're trying to connect your Klimerko to **is not** a 5GHz network.
+- Select your WiFi network from the list (or manually enter WiFi network name if you're not in range of the network you plan to use your Klimerko on), enter your WiFi Password and copy/paste the AllThingsTalk Device ID and Device Token that you noted in previous step ([Cloud Platform Credentials](#cloud-platform-12))
+  > If you are updating your credentials, it is possible to only update some of them by leaving other fields empty. The empty fields will not overwrite the values stored in memory when saving.
 - Click ***"Save"***. 
 - Klimerko has now automatically shut down the WiFi Configuration Mode (the blue LED stops shining constantly) and your computer/smartphone will disconnect from "KLIMERKO-XXX" network. The WiFi Configuration Portal will automatically close on your computer/smartphone only if it was automatically opened. Otherwise, you'll need to close the browser tab.
 - Your Klimerko will now attempt to connect to WiFi and AllThingsTalk, indicated by slow blinking of the LED light.
@@ -426,8 +427,12 @@ If you can't connect to your Klimerko when it's in WiFi Configuration Mode or yo
 
 ## Klimerko isn't connecting to WiFi or AllThingsTalk
 If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU constantly blinking slowly):
-  - As noted in [Updating Firmware](#updating-firmware), if you updated your Klimerko's Firmware from a version below 2.0.0 to version 2.0.0 or above, you will need to [re-enter your WiFi and AllThingsTalk credentials](#configuring-klimerko-credentials) just this time.
-  - Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-12) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
+  - If you updated your Klimerko's Firmware from a version below 2.0.0 to version 2.0.0 or above, you will need to [re-enter your WiFi and AllThingsTalk credentials](#configuring-klimerko-credentials) just this time, as noted in [Updating Firmware](#updating-firmware).
+  - Make sure your credentials are correct. Check if you copied your [AllThingsTalk credentials](#cloud-platform-12) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)  
+    - If you only need to update WiFi Credentials, you can leave "AllThingsTalk Device ID" and "AllThingsTalk Device Token" fields empty when saving.
+    - If you only need to update AllThingsTalk Credentials, you can leave the WiFi fields empty when saving.
+    - If you only need to update "AllThingsTalk Device ID", you can leave WiFi and "AllThingsTalk Device Token" fields empty when saving.
+    - If you only need to update "AllThingsTalk Device Token", you can leave WiFi and "AllThingsTalk Device ID" fields empty when saving.
   - Turn on WiFi Configuration Mode on your Klimerko by pressing and holding the **FLASH** button on the NodeMCU board.  
   Connect to your Klimerko using WiFi and once the WiFi Configuration Portal is open, you should see the WiFi connection status at the bottom of the page.
   - Make sure Klimerko is not too far away from your Router.
