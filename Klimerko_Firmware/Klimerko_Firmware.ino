@@ -1,5 +1,4 @@
-/*  
- *   ------------------------------------------- Project "KLIMERKO" ---------------------------------------------
+/*  ------------------------------------------- Project "KLIMERKO" ---------------------------------------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
  *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
  *  ------------------------------------------------------------------------------------------------------------
@@ -200,7 +199,7 @@ void publishSensorData() {
       char topic[128];
       snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
       mqtt.publish(topic, JSONmessageBuffer, false);
-      Serial.print("[DATA] Sensor Data published to AllThingsTalk (JSON): ");
+      Serial.print("[DATA] Published sensor data to AllThingsTalk: ");
       Serial.println(JSONmessageBuffer);
       
       Serial.println("");
@@ -377,7 +376,7 @@ void pmsPower(bool state) { // Controls sleep state of PMS sensor
   }
 }
  
-void controlInterval(int interval) { // Changes sensor data reporting interval
+void changeInterval(int interval) { // Changes sensor data reporting interval
   if (interval > 5 && interval <= 60) {
     sendInterval = interval;
     pmsNoSleep = false;
@@ -387,7 +386,7 @@ void controlInterval(int interval) { // Changes sensor data reporting interval
     Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    publishInterval();
+    publishDiagnosticData();
   } else if (interval <= 5) {
     sendInterval = 5;
     pmsNoSleep = true;
@@ -397,7 +396,7 @@ void controlInterval(int interval) { // Changes sensor data reporting interval
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
     Serial.println("[DATA] Note that this prevents sleeping of Air Quality Sensor and reduces its lifespan.");
-    publishInterval();
+    publishDiagnosticData();
   } else if (interval > 60) {
     pmsNoSleep = false;
     Serial.print("[DATA] Received command to set reporting interval to ");
@@ -409,19 +408,34 @@ void controlInterval(int interval) { // Changes sensor data reporting interval
     Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    publishInterval();
+    publishDiagnosticData();
   }
 }
 
-void publishInterval() { // Publishes the publishing interval to AllThingsTalk
-  Serial.println("[DATA] Publishing sensor data reporting interval to AllThingsTalk");
-  char topic[128];
-  snprintf(topic, sizeof topic, "%s%s%s%s%s", "device/", deviceId, "/asset/", INTERVAL_ASSET, "/state");
-  DynamicJsonDocument doc(64);
-  char JSONmessageBuffer[64];
-  doc["value"] = sendInterval;
-  serializeJson(doc, JSONmessageBuffer);
-  mqtt.publish(topic, JSONmessageBuffer, false);
+void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
+  if (!wifiConnectionLost) {
+    if (!mqttConnectionLost) {
+      char JSONmessageBuffer[256];
+      DynamicJsonDocument doc(256);
+      JsonObject sendIntervalJson = doc.createNestedObject(INTERVAL_ASSET);
+      sendIntervalJson["value"] = sendInterval;
+      JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
+      firmwareJson["value"] = firmwareVersion;
+      JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
+      wifiJson["value"] = wifiSignal();
+      serializeJson(doc, JSONmessageBuffer);
+    
+      char topic[256];
+      snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
+      mqtt.publish(topic, JSONmessageBuffer, false);
+      Serial.print("[DATA] Published diagnostic data to AllThingsTalk: ");
+      Serial.println(JSONmessageBuffer);
+    } else {
+      Serial.println("[DATA] Can't send diagnostic data because Klimerko is not connected to AllThingsTalk");
+    }
+  } else {
+    Serial.println("[DATA] Can't send diagnostic data because Klimerko is not connected to WiFi");
+  }
 }
 
 int readIntervalMillis() {
@@ -657,7 +671,7 @@ void mqttCallback(char* p_topic, byte* p_payload, unsigned int p_length) {
 
   if (asset == INTERVAL_ASSET) {
     int value = doc["value"];
-    controlInterval(value);
+    changeInterval(value);
   }
 }
 
@@ -713,7 +727,7 @@ bool connectMQTT() {
         ledSuccessBlink = true;
       }
       mqttSubscribeTopics();
-      publishInterval();
+      publishDiagnosticData();
       return true;
     } else {
       Serial.print("[MQTT] Connection Failed, Reason: ");
@@ -729,6 +743,7 @@ void maintainMQTT() {
   if (mqtt.connected()) {
     if (mqttConnectionLost) {
       mqttConnectionLost = false;
+      publishDiagnosticData();
     }
     mqtt.loop();
   } else {

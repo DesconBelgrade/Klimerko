@@ -325,7 +325,6 @@ This step is for those who've already built their Klimerko and wish to update it
 To check what Firmware version your Klimerko is on, you can:
   - Open your Klimerko device on your [AllThingsTalk Maker](https://maker.allthingstalk.com):  
   The Firmware Version will be stored in the "Firmware Version" asset.  
-  If you just updated your Klimerko, it may take up to 15 minutes for the "Firmware Version" asset to be updated.
   - Use Serial Monitor in Arduino IDE:  
   Klimerko will output the Firmware Version in the first few lines once it boots.
   - *Version 2.0.0 and above only:* Activate WiFi Configuration Mode  and click **Configure WiFi**:  
