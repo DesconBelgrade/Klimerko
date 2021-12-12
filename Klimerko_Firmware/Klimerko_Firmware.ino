@@ -719,9 +719,9 @@ void mqttSubscribeTopics() {
 
 bool connectMQTT() {
   if (!wifiConnectionLost) {
-    Serial.println("[MQTT] Connecting to AllThingsTalk...");
+    Serial.print("[MQTT] Connecting to AllThingsTalk... ");
     if (mqtt.connect(klimerkoID, deviceToken, MQTT_PASSWORD)) {
-      Serial.println("[MQTT] Connected!");
+      Serial.println("Connected!");
       if (mqttConnectionLost) {
         mqttConnectionLost = false;
         ledSuccessBlink = true;
@@ -730,7 +730,7 @@ bool connectMQTT() {
       publishDiagnosticData();
       return true;
     } else {
-      Serial.print("[MQTT] Connection Failed, Reason: ");
+      Serial.print("Failed! Reason: ");
       Serial.println(mqtt.state());
       mqttConnectionLost = true;
       return false;
@@ -748,7 +748,12 @@ void maintainMQTT() {
     mqtt.loop();
   } else {
     if (!mqttConnectionLost) {
-      Serial.println("[MQTT] Lost Connection...");
+      if (wifiConnectionLost) {
+        Serial.println("[MQTT] Lost connection due to WiFi!");
+      } else {
+        Serial.print("[MQTT] Lost Connection. Reason: ");
+        Serial.println(mqtt.state());
+      }
       mqttConnectionLost = true;
     }
     if (millis() - mqttReconnectLastAttempt >= mqttReconnectInterval * 1000 && !wifiConnectionLost) {
@@ -761,6 +766,7 @@ void maintainMQTT() {
 bool initMQTT() {
   mqtt.setBufferSize(MQTT_MAX_MESSAGE_SIZE);
   mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setKeepAlive(30);
   mqtt.setCallback(mqttCallback);
   return connectMQTT();
 }
