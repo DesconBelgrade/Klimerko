@@ -40,6 +40,14 @@ This guide is in chronological order, so try not to skip through parts if you're
   * [Updating Wirelessly (OTA)](#updating-wirelessly-ota)
   * [Updating using Arduino IDE](#updating-using-arduino-ide)
 * [Toubleshooting](#troubleshooting)
+  * [Use Serial Monitor](#use-serial-monitor)
+  * [Compilation issues](#compilation-issues)
+  * [Klimerko can't see WiFi network](#klimerko-cant-see-wifi-network)
+  * [Can't connect to Klimerko to configure it](#cant-connect-to-klimerko-to-configure-it)
+  * [Klimerko isn't connecting to WiFi or AllThingsTalk](#klimerko-isnt-connecting-to-wifi-or-allthingstalk)
+  * [Assets not being updated](#assets-not-being-updated)
+  * [Klimerko won't turn on](#klimerko-wont-turn-on)
+  * [Factory Reset your Klimerko](#factory-reset-your-klimerko)
 
 
 # Hardware Build
@@ -366,7 +374,7 @@ This only applies to aforementioned cases due to changes in how data is stored i
   - If on Windows, click *Help > About Arduino* to check version
   - If on MacOS, click *Arduino > About Arduino* to check version
   - In case you're on a version older than 1.8.10, simply download [Arduino IDE](https://www.arduino.cc/en/Main/software) again and install it.
-    - If on Windows, choose “*Windows installer, for Windows XP and up*” when downloading
+    - If on Windows, choose “*Windows installer, for Windows 7 and up*” when downloading
 - Go to *Tools* > *Board* > *Boards Manager*
 - Search for “*esp8266*” by *ESP8266 Community*
   -  Even if you already have this installed, you need to have the latest version, so click the **Update** button next to the result if you see it. If not, you probably already have the latest version.
@@ -385,8 +393,8 @@ Awesome! Your Klimerko is now updated to the latest version!
 ## Update to newest firmware
 Before anything else, make sure you've updated your Klimerko to the newest Firmware by following the [Updating Firmware](#updating-firmware) section.
 
-## Use Serial Monitor to get more info
-To see what's going on under the hood, use the Serial Monitor tool provided in Arduino IDE:
+## Use Serial Monitor
+To see what's really going on under the hood, use the Serial Monitor tool provided in Arduino IDE:
   - Connect your Klimerko to your computer
   - Open Arduino IDE
   - Select *Tools > Port* and select the correct port
@@ -418,6 +426,7 @@ If you can't connect to your Klimerko when it's in WiFi Configuration Mode or yo
 
 ## Klimerko isn't connecting to WiFi or AllThingsTalk
 If your device won't connect to WiFi or AllThingsTalk (blue LED on NodeMCU constantly blinking slowly):
+  - As noted in [Updating Firmware](#updating-firmware), if you updated your Klimerko's Firmware from a version below 2.0.0 to version 2.0.0 or above, you will need to [re-enter your WiFi and AllThingsTalk credentials](#configuring-klimerko-credentials) just this time.
   - Make sure your credentials are correct. Check if you copied [AllThingsTalk credentials](#cloud-platform-12) and your WiFi credentials correctly. [Reconfigure credentials to make sure.](#configuring-klimerko-credentials)
   - Turn on WiFi Configuration Mode on your Klimerko by pressing and holding the **FLASH** button on the NodeMCU board.  
   Connect to your Klimerko using WiFi and once the WiFi Configuration Portal is open, you should see the WiFi connection status at the bottom of the page.
