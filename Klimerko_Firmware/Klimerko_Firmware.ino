@@ -90,6 +90,7 @@ unsigned long  ledLastUpdate;
 uint8_t        dataPublishInterval     = 15;    // [MINUTES] Default sensor data sending interval
 const uint8_t  sensorAverageSamples    = 10;    // Number of samples used to average values from sensors
 const int      sensorRetriesUntilConsideredOffline = 2;
+bool           dataPublishFailed       = false; // Keeps track if a payload has failed to send so we can retry
 unsigned long  sensorReadTime, dataPublishTime;
 
 // -------------------------- PMS7003 -----------------------------------------------------
@@ -138,13 +139,29 @@ void sensorLoop() { // Reads and publishes sensor data and wakes up pms sensor i
   
   // Read sensor data
   if (millis() - sensorReadTime >= readIntervalMillis()) {
+    sensorReadTime = millis();
     readSensorData();
   }
 
   // Send average sensor data
   if (millis() - dataPublishTime >= dataPublishInterval * 60000) {
-    publishSensorData()
-    dataPublishTime = millis();
+    if (!wifiConnectionLost) {
+      if (!mqttConnectionLost) {
+        dataPublishFailed = false;
+        dataPublishTime = millis();
+        publishSensorData();
+      } else {
+        if (!dataPublishFailed) {
+          Serial.println("[DATA] Can't send sensor data because Klimerko is not connected to AllThingsTalk");
+          dataPublishFailed = true;
+        }
+      }
+    } else {
+      if (!dataPublishFailed) {
+        Serial.println("[DATA] Can't send sensor data because Klimerko is not connected to WiFi");
+        dataPublishFailed = true;
+      }
+    }
   }
 }
 
@@ -159,59 +176,44 @@ void readSensorData() {
     Serial.println(" seconds before next reading.");
     pmsPower(false);
   }
-  sensorReadTime = millis();
 }
 
-bool publishSensorData() {
-  if (!wifiConnectionLost) {
-    if (!mqttConnectionLost) {
-      Serial.println("[DATA] Now sending averaged data to AllThingsTalk...");
-      char JSONmessageBuffer[512];
-      DynamicJsonDocument doc(512);
-      if (pmsSensorOnline) {
-        JsonObject airQualityJson = doc.createNestedObject(AQ_ASSET);
-        airQualityJson["value"] = airQuality;
-        JsonObject pm1Json = doc.createNestedObject(PM1_ASSET);
-        pm1Json["value"] = avgPM1;
-        JsonObject pm25Json = doc.createNestedObject(PM2_5_ASSET);
-        pm25Json["value"] = avgPM25;
-        JsonObject pm10Json = doc.createNestedObject(PM10_ASSET);
-        pm10Json["value"] = avgPM10;
-      } else {
-        Serial.println("[DATA] Won't send Air Quality Sensor (PMS7003) data because it seems to be offline.");
-      }
-      if (bmeSensorOnline) {
-        JsonObject temperatureJson = doc.createNestedObject(TEMPERATURE_ASSET);
-        temperatureJson["value"] = avgTemperature;
-        JsonObject humidityJson = doc.createNestedObject(HUMIDITY_ASSET);
-        humidityJson["value"] = avgHumidity;
-        JsonObject pressureJson = doc.createNestedObject(PRESSURE_ASSET);
-        pressureJson["value"] = avgPressure;
-      } else {
-        Serial.println("[DATA] Won't send Temperature/Humidity/Pressure Sensor (BME280) data because it seems to be offline.");
-      }
-      JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
-      firmwareJson["value"] = firmwareVersion;
-      JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
-      wifiJson["value"] = wifiSignal();
-      serializeJson(doc, JSONmessageBuffer);
-  
-      char topic[128];
-      snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
-      mqtt.publish(topic, JSONmessageBuffer, false);
-      Serial.print("[DATA] Published sensor data to AllThingsTalk: ");
-      Serial.println(JSONmessageBuffer);
-      
-      Serial.println("");
-      return true;
-    } else {
-      Serial.println("[DATA] Can't send data because Klimerko is not connected to AllThingsTalk");
-      return false;
-    }
+void publishSensorData() {
+  char JSONmessageBuffer[512];
+  DynamicJsonDocument doc(512);
+  if (pmsSensorOnline) {
+    JsonObject airQualityJson = doc.createNestedObject(AQ_ASSET);
+    airQualityJson["value"] = airQuality;
+    JsonObject pm1Json = doc.createNestedObject(PM1_ASSET);
+    pm1Json["value"] = avgPM1;
+    JsonObject pm25Json = doc.createNestedObject(PM2_5_ASSET);
+    pm25Json["value"] = avgPM25;
+    JsonObject pm10Json = doc.createNestedObject(PM10_ASSET);
+    pm10Json["value"] = avgPM10;
   } else {
-    Serial.println("[DATA] Can't send data because Klimerko is not connected to WiFi");
-    return false;
+    Serial.println("[DATA] Won't send Air Quality Sensor (PMS7003) data because it seems to be offline.");
   }
+  if (bmeSensorOnline) {
+    JsonObject temperatureJson = doc.createNestedObject(TEMPERATURE_ASSET);
+    temperatureJson["value"] = avgTemperature;
+    JsonObject humidityJson = doc.createNestedObject(HUMIDITY_ASSET);
+    humidityJson["value"] = avgHumidity;
+    JsonObject pressureJson = doc.createNestedObject(PRESSURE_ASSET);
+    pressureJson["value"] = avgPressure;
+  } else {
+    Serial.println("[DATA] Won't send Temperature/Humidity/Pressure Sensor (BME280) data because it seems to be offline.");
+  }
+  JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
+  firmwareJson["value"] = firmwareVersion;
+  JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
+  wifiJson["value"] = wifiSignal();
+  serializeJson(doc, JSONmessageBuffer);
+
+  char topic[128];
+  snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
+  mqtt.publish(topic, JSONmessageBuffer, false);
+  Serial.print("[DATA] Published sensor data to AllThingsTalk: ");
+  Serial.println(JSONmessageBuffer);
 }
 
 void readPMS() { // Function that reads data from the PMS7003
