@@ -388,24 +388,34 @@ void changeInterval(int interval) { // Changes sensor data reporting interval
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
     publishDiagnosticData();
-  } else if (interval <= 5) {
-    dataPublishInterval = 5;
+  } else if (interval <= 1) {
+    dataPublishInterval = 1;
     pmsNoSleep = true;
     pmsPower(true);
-    Serial.println("[DATA] Reporting interval set to 5 minutes (minimum).");
+    Serial.println("[DATA] Reporting interval set to 1 minute (minimum).");
     Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    Serial.println("[DATA] Note that this prevents sleeping of Air Quality Sensor and reduces its lifespan.");
+    Serial.println("[DATA] This prevents sleeping of Air Quality Sensor and reduces its lifespan.");
     publishDiagnosticData();
-  } else if (interval > 60) {
-    pmsNoSleep = false;
-    Serial.print("[DATA] Received command to set reporting interval to ");
+  } else if (interval <= 5) {
+    dataPublishInterval = interval;
+    pmsNoSleep = true;
+    pmsPower(true);
+    Serial.print("[DATA] Device reporting interval set to ");
     Serial.print(interval);
-    Serial.println(" minutes but that exceeds the maximum.");
-    Serial.print("[DATA] Reverted back to ");
+    Serial.println(" minutes");
+    Serial.print("[DATA] Sensor data will be read every ");
+    Serial.print(readIntervalSeconds());
+    Serial.println(" seconds for averaging.");
+    Serial.println("[DATA] This prevents sleeping of Air Quality Sensor and reduces its lifespan.");
+    publishDiagnosticData();
+  } else if (interval >= 60) {
+    dataPublishInterval = 60;
+    pmsNoSleep = false;
+    Serial.print("[DATA] Device reporting interval set to ");
     Serial.print(dataPublishInterval);
-    Serial.println(" minutes.");
+    Serial.println(" minutes");
     Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
