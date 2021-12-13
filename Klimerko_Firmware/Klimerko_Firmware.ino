@@ -89,7 +89,7 @@ unsigned long  ledLastUpdate;
 // --------------------- SENSORS (GENERAL) ------------------------------------------------
 uint8_t        dataPublishInterval     = 15;    // [MINUTES] Default sensor data sending interval
 const uint8_t  sensorAverageSamples    = 10;    // Number of samples used to average values from sensors
-const int      sensorRetriesUntilConsideredOffline = 2;
+const int      sensorRetriesUntilConsideredOffline = 3;
 bool           dataPublishFailed       = false; // Keeps track if a payload has failed to send so we can retry
 unsigned long  sensorReadTime, dataPublishTime;
 
@@ -710,7 +710,7 @@ String wifiSignal() {
 
 void initPMS() {
   pmsSerial.begin(9600);
-  pmsPower(false);
+  pmsPower(true);
 }
 
 void initBME() {
