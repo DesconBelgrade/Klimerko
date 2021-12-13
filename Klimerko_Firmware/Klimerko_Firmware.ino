@@ -87,19 +87,19 @@ const int      ledBlinkInterval        = 1000;  // (milliseconds) How often to b
 unsigned long  ledLastUpdate;
 
 // --------------------- SENSORS (GENERAL) ------------------------------------------------
-uint8_t        sendInterval            = 15;    // [MINUTES] Default sensor data sending interval
-const uint8_t  averageSamples          = 10;    // Number of samples used to average values from sensors
+uint8_t        dataPublishInterval     = 15;    // [MINUTES] Default sensor data sending interval
+const uint8_t  sensorAverageSamples    = 10;    // Number of samples used to average values from sensors
 const int      sensorRetriesUntilConsideredOffline = 2;
+unsigned long  sensorReadTime, dataPublishTime;
 
 // -------------------------- PMS7003 -----------------------------------------------------
-const uint8_t  wakeInterval            = 30;    // [SECONDS] Seconds PMS sensor should be active before reading it
+const uint8_t  pmsWakeBefore           = 30;    // [SECONDS] Seconds PMS sensor should be active before reading it
 bool           pmsSensorOnline         = true;
 int            pmsSensorRetry          = 0;
 bool           pmsNoSleep              = false;
 bool           pmsWoken                = false;
 const char     *airQuality, *airQualityRaw;
 int            avgPM1, avgPM25, avgPM10;
-unsigned long  lastReadTime, lastSendTime;
 
 // -------------------------- BME280 -----------------------------------------------------
 bool           bmeSensorOnline         = true;
@@ -122,29 +122,29 @@ SoftwareSerial pmsSerial(pmsTX, pmsRX);
 PMS pms(pmsSerial);
 PMS::DATA data;
 Adafruit_BME280 bme;
-movingAvg pm1(averageSamples);
-movingAvg pm25(averageSamples);
-movingAvg pm10(averageSamples);
-movingAvg temp(averageSamples);
-movingAvg hum(averageSamples);
-movingAvg pres(averageSamples);
+movingAvg pm1(sensorAverageSamples);
+movingAvg pm25(sensorAverageSamples);
+movingAvg pm10(sensorAverageSamples);
+movingAvg temp(sensorAverageSamples);
+movingAvg hum(sensorAverageSamples);
+movingAvg pres(sensorAverageSamples);
 
 void sensorLoop() { // Reads and publishes sensor data and wakes up pms sensor in predefined intervals
   // Check if it's time to wake up PMS7003
-  if (millis() - lastReadTime >= readIntervalMillis() - (wakeInterval * 1000) && !pmsWoken && pmsSensorOnline) {
+  if (millis() - sensorReadTime >= readIntervalMillis() - (pmsWakeBefore * 1000) && !pmsWoken && pmsSensorOnline) {
     Serial.println("[PMS] Now waking up Air Quality Sensor");
     pmsPower(true);
   }
   
   // Read sensor data
-  if (millis() - lastReadTime >= readIntervalMillis()) {
+  if (millis() - sensorReadTime >= readIntervalMillis()) {
     readSensorData();
   }
 
   // Send average sensor data
-  if (millis() - lastSendTime >= sendInterval * 60000) {
-    publishSensorData();
-    lastSendTime = millis();
+  if (millis() - dataPublishTime >= dataPublishInterval * 60000) {
+    publishSensorData()
+    dataPublishTime = millis();
   }
 }
 
@@ -155,14 +155,14 @@ void readSensorData() {
   Serial.println("----------------------------------------------------------------");
   if (!pmsNoSleep && pmsSensorOnline) {
     Serial.print("[PMS] Air Quality Sensor will sleep until ");
-    Serial.print(wakeInterval);
+    Serial.print(pmsWakeBefore);
     Serial.println(" seconds before next reading.");
     pmsPower(false);
   }
-  lastReadTime = millis();
+  sensorReadTime = millis();
 }
 
-void publishSensorData() {
+bool publishSensorData() {
   if (!wifiConnectionLost) {
     if (!mqttConnectionLost) {
       Serial.println("[DATA] Now sending averaged data to AllThingsTalk...");
@@ -203,11 +203,14 @@ void publishSensorData() {
       Serial.println(JSONmessageBuffer);
       
       Serial.println("");
+      return true;
     } else {
       Serial.println("[DATA] Can't send data because Klimerko is not connected to AllThingsTalk");
+      return false;
     }
   } else {
     Serial.println("[DATA] Can't send data because Klimerko is not connected to WiFi");
+    return false;
   }
 }
 
@@ -378,7 +381,7 @@ void pmsPower(bool state) { // Controls sleep state of PMS sensor
  
 void changeInterval(int interval) { // Changes sensor data reporting interval
   if (interval > 5 && interval <= 60) {
-    sendInterval = interval;
+    dataPublishInterval = interval;
     pmsNoSleep = false;
     Serial.print("[DATA] Device reporting interval set to ");
     Serial.print(interval);
@@ -388,7 +391,7 @@ void changeInterval(int interval) { // Changes sensor data reporting interval
     Serial.println(" seconds for averaging.");
     publishDiagnosticData();
   } else if (interval <= 5) {
-    sendInterval = 5;
+    dataPublishInterval = 5;
     pmsNoSleep = true;
     pmsPower(true);
     Serial.println("[DATA] Reporting interval set to 5 minutes (minimum).");
@@ -403,7 +406,7 @@ void changeInterval(int interval) { // Changes sensor data reporting interval
     Serial.print(interval);
     Serial.println(" minutes but that exceeds the maximum.");
     Serial.print("[DATA] Reverted back to ");
-    Serial.print(sendInterval);
+    Serial.print(dataPublishInterval);
     Serial.println(" minutes.");
     Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
@@ -417,8 +420,8 @@ void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
     if (!mqttConnectionLost) {
       char JSONmessageBuffer[256];
       DynamicJsonDocument doc(256);
-      JsonObject sendIntervalJson = doc.createNestedObject(INTERVAL_ASSET);
-      sendIntervalJson["value"] = sendInterval;
+      JsonObject dataPublishIntervalJson = doc.createNestedObject(INTERVAL_ASSET);
+      dataPublishIntervalJson["value"] = dataPublishInterval;
       JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
       firmwareJson["value"] = firmwareVersion;
       JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
@@ -439,12 +442,12 @@ void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
 }
 
 int readIntervalMillis() {
-  int result = (sendInterval * 60000) / averageSamples;
+  int result = (dataPublishInterval * 60000) / sensorAverageSamples;
   return result;
 }
 
 int readIntervalSeconds() {
-  int result = (sendInterval * 60) / averageSamples;
+  int result = (dataPublishInterval * 60) / sensorAverageSamples;
   return result;
 }
 
@@ -876,7 +879,7 @@ void setup() {
   Serial.print("| Sensors are read every ");
   Serial.print(readIntervalSeconds());
   Serial.print(" seconds and averages are published every ");
-  Serial.print(sendInterval);
+  Serial.print(dataPublishInterval);
   Serial.println(" minutes. |");
   Serial.println(" --------------------------------------------------------------------------------");
   initAvg();
