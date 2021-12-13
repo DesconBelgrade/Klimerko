@@ -807,11 +807,11 @@ void maintainWiFi() {
       Serial.println(WiFi.status());
       wifiConnectionLost = true;
     }
-//    // AutoReconnect handles this, but I left it here just in case it's needed again
-//    if (millis() - wifiReconnectLastAttempt >= wifiReconnectInterval * 1000 && !wm.getConfigPortalActive()) {
-//      connectWiFi();
-//      wifiReconnectLastAttempt = millis();
-//    }
+    // AutoReconnect handles this, this here exists as backup
+    if (millis() - wifiReconnectLastAttempt >= wifiReconnectInterval * 1000 && !wm.getConfigPortalActive()) {
+      connectWiFi();
+      wifiReconnectLastAttempt = millis();
+    }
   }
 }
 
