@@ -105,7 +105,7 @@ int            avgPM1, avgPM25, avgPM10;
 // -------------------------- BME280 -----------------------------------------------------
 bool           bmeSensorOnline         = true;
 int            bmeSensorRetry          = 0;
-int            avgTemperature, avgHumidity, avgPressure;
+float          avgTemperature, avgHumidity, avgPressure;
 
 // -------------------------- MEMORY -----------------------------------------------------
 const uint16_t EEPROM_attStartAddress  = 0;
@@ -309,36 +309,32 @@ void readBME() { // Function for reading data from the BME280 Sensor
   // inside the Klimerko's 3D case interferes by about 2 degrees
   // Because of this, we'll subtract 4 degrees from the raw reading
   // (do note that the calibration/testing was done at 20*-25* celsius)
-  float temperatureRaw =  bme.readTemperature() - 4;
+  float temperatureRaw = bme.readTemperature() - 4;
   float humidityRaw = bme.readHumidity();
   float pressureRaw = bme.readPressure() / 100.0F;
 
   if (temperatureRaw > -100 && temperatureRaw < 150 && humidityRaw >= 0 && humidityRaw <= 100) {
-    static char temperature[7];
-    dtostrf(temperatureRaw, 6, 1, temperature);
-    static char humidity[7];
-    dtostrf(humidityRaw, 6, 1, humidity);
-    static char pressure[7];
-    dtostrf(pressureRaw, 6, 0, pressure);
-
     // Add to average calculation and load current average
-    avgTemperature = temp.reading(temperatureRaw);
-    avgHumidity = hum.reading(humidityRaw);
-    avgPressure = pres.reading(pressureRaw);
+    avgTemperature = temp.reading(temperatureRaw*100);
+    avgTemperature = avgTemperature/100;
+    avgHumidity = hum.reading(humidityRaw*100);
+    avgHumidity = avgHumidity/100;
+    avgPressure = pres.reading(pressureRaw*100);
+    avgPressure = avgPressure/100;
 
     // Print data to Serial port
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
+    Serial.print("Temperature:   ");
+    Serial.print(temperatureRaw);
     Serial.print(" (Average: ");
     Serial.print(avgTemperature);
     Serial.println(")");
-    Serial.print("Humidity:    ");
-    Serial.print(humidity);
+    Serial.print("Humidity:      ");
+    Serial.print(humidityRaw);
     Serial.print(" (Average: ");
     Serial.print(avgHumidity);
     Serial.println(")");
-    Serial.print("Pressure:    ");
-    Serial.print(pressure);
+    Serial.print("Pressure:      ");
+    Serial.print(pressureRaw);
     Serial.print(" (Average: ");
     Serial.print(avgPressure);
     Serial.println(")");
