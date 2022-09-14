@@ -33,8 +33,8 @@
 #define pmsRX          D6
 
 // ------------------------- Device -----------------------------------------------------
-String         firmwareVersion         = "2.0.0";
-const char*    firmwareVersionPortal   =  "<p>Firmware Version: 2.0.0</p>";
+String         firmwareVersion         = "2.1.0";
+const char*    firmwareVersionPortal   =  "<p>Firmware Version: 2.1.0</p>";
 char           klimerkoID[32];
 
 // -------------------------- WiFi ------------------------------------------------------
@@ -63,6 +63,7 @@ char*          PM2_5_ASSET             = "pm2-5";
 char*          PM10_ASSET              = "pm10";
 char*          AQ_ASSET                = "air-quality";
 char*          TEMPERATURE_ASSET       = "temperature";
+char*          TEMP_OFFSET_ASSET       = "temperature-offset";
 char*          HUMIDITY_ASSET          = "humidity";
 char*          PRESSURE_ASSET          = "pressure";
 char*          INTERVAL_ASSET          = "interval";
@@ -103,8 +104,13 @@ const char     *airQuality, *airQualityRaw;
 int            avgPM1, avgPM25, avgPM10;
 
 // -------------------------- BME280 -----------------------------------------------------
-bool           bmeSensorOnline         = true;
-int            bmeSensorRetry          = 0;
+bool           bmeSensorOnline                = true;
+int            bmeSensorRetry                 = 0;
+float          bmeTemperatureOffset           = -4;   // Default temperature offset
+char           bmeTemperatureOffsetChar[8];           // Used for WiFi Configuration Portal and memory
+const char     bmeTemperatureOffsetDefault[8] = "-4"; // Used for WiFi Configuration Portal and memory
+const int      bmeTemperatureOffsetMax        = 25;
+const int      bmeTemperatureOffsetMin        = -25;
 float          avgTemperature, avgHumidity, avgPressure;
 
 // -------------------------- MEMORY -----------------------------------------------------
@@ -115,6 +121,7 @@ const uint16_t EEPROMsize              = 256;
 WiFiManager wm;
 WiFiManagerParameter portalDeviceID("device_id", "AllThingsTalk Device ID", deviceId, 32);
 WiFiManagerParameter portalDeviceToken("device_token", "AllThingsTalk Device Token", deviceToken, 64);
+WiFiManagerParameter portalTemperatureOffset("temperature_offset", "Temperature Offset", bmeTemperatureOffsetChar, 8);
 WiFiManagerParameter portalDisplayFirmwareVersion(firmwareVersionPortal);
 WiFiManagerParameter portalDisplayCredits("Firmware Designed and Developed by Vanja Stanic");
 WiFiClient networkClient;
@@ -265,17 +272,17 @@ void readPMS() { // Function that reads data from the PMS7003
     Serial.println(")");
     Serial.print("PM 1:          ");
     Serial.print(PM1);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM1);
     Serial.println(")");
     Serial.print("PM 2.5:        ");
     Serial.print(PM2_5);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM25);
     Serial.println(")");
     Serial.print("PM 10:         ");
     Serial.print(PM10);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM10);
     Serial.println(")");
 
@@ -304,38 +311,39 @@ void readPMS() { // Function that reads data from the PMS7003
 }
 
 void readBME() { // Function for reading data from the BME280 Sensor
-  // Save the current BME280 sensor data
-  // BME280 Heats itself up about 1-2 degrees and the NodeMCU
-  // inside the Klimerko's 3D case interferes by about 2 degrees
-  // Because of this, we'll subtract 4 degrees from the raw reading
-  // (do note that the calibration/testing was done at 20*-25* celsius)
-  float temperatureRaw = bme.readTemperature() - 4;
-  float humidityRaw = bme.readHumidity();
-  float pressureRaw = bme.readPressure() / 100.0F;
+  float temperatureRaw = bme.readTemperature();
+  float temperature    = temperatureRaw + bmeTemperatureOffset;
+  float humidityRaw    = bme.readHumidity();
+  float humidity       = humidityRaw * exp(243.12 * 17.62 * (temperatureRaw - temperature) / (243.12 + temperatureRaw) / (243.12 + temperature)); // Compensates the RH in accordance to temperature offset so the RH isn't wrong when the temp is offset
+  float pressure       = bme.readPressure() / 100.0F;
 
-  if (temperatureRaw > -100 && temperatureRaw < 150 && humidityRaw >= 0 && humidityRaw <= 100) {
-    // Add to average calculation and load current average
-    avgTemperature = temp.reading(temperatureRaw*100);
+  if (temperatureRaw > -100 && temperatureRaw < 150 && humidity >= 0 && humidity <= 100) {
+    avgTemperature = temp.reading(temperature*100);
     avgTemperature = avgTemperature/100;
-    avgHumidity = hum.reading(humidityRaw*100);
-    avgHumidity = avgHumidity/100;
-    avgPressure = pres.reading(pressureRaw*100);
-    avgPressure = avgPressure/100;
+    avgHumidity    = hum.reading(humidity*100);
+    avgHumidity    = avgHumidity/100;
+    avgPressure    = pres.reading(pressure*100);
+    avgPressure    = avgPressure/100;
 
-    // Print data to Serial port
     Serial.print("Temperature:   ");
-    Serial.print(temperatureRaw);
-    Serial.print(" (Average: ");
+    Serial.print(temperature);
+    Serial.print("°C (Average: ");
     Serial.print(avgTemperature);
+    Serial.print(", Raw: ");
+    Serial.print(temperatureRaw);
+    Serial.print(", Offset: ");
+    Serial.print(bmeTemperatureOffset);
     Serial.println(")");
     Serial.print("Humidity:      ");
-    Serial.print(humidityRaw);
-    Serial.print(" (Average: ");
+    Serial.print(humidity);
+    Serial.print(" % (Average: ");
     Serial.print(avgHumidity);
+    Serial.print(", Raw: ");
+    Serial.print(humidityRaw);
     Serial.println(")");
     Serial.print("Pressure:      ");
-    Serial.print(pressureRaw);
-    Serial.print(" (Average: ");
+    Serial.print(pressure);
+    Serial.print(" mbar (Average: ");
     Serial.print(avgPressure);
     Serial.println(")");
 
@@ -434,6 +442,8 @@ void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
       firmwareJson["value"] = firmwareVersion;
       JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
       wifiJson["value"] = wifiSignal();
+      JsonObject tempOffsetJson = doc.createNestedObject(TEMP_OFFSET_ASSET);
+      tempOffsetJson["value"] = bmeTemperatureOffset;
       serializeJson(doc, JSONmessageBuffer);
     
       char topic[256];
@@ -459,64 +469,138 @@ int readIntervalSeconds() {
   return result;
 }
 
-void getCredentials() { // Restores AllThingsTalk credentials from EEPROM
+void restoreData() { // Restores AllThingsTalk credentials from EEPROM as well as temperature offset data
+  char okCreds[2+1];
+  char okOffset[2+1];
   EEPROM.begin(EEPROMsize);
   EEPROM.get(EEPROM_attStartAddress, deviceId);
   EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId), deviceToken);
-  char ok[2+1];
-  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), ok);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), okCreds);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(okCreds), bmeTemperatureOffsetChar);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(okCreds)+sizeof(bmeTemperatureOffsetChar), okOffset);
   EEPROM.end();
-  if (String(ok) != String("OK")) {
+  if (String(okCreds) != String("OK")) {
     deviceId[0] = 0;
     deviceToken[0] = 0;
+    Serial.println("[MEMORY] AllThingsTalk Device ID: Nothing in Memory");
+  } else {
+    Serial.print("[MEMORY] AllThingsTalk Device ID: ");
+    Serial.println(deviceId);
+//    portalDeviceID.setValue(deviceId, sizeof(deviceId)); // Set WiFi Configuration Portal to show real value
+//    Serial.print("[MEMORY] AllThingsTalk Device Token: ");
+//    Serial.println(deviceToken);
+//    portalDeviceToken.setValue(deviceToken, sizeof(deviceToken)); // Set WiFi Configuration Portal to show real value
   }
-  Serial.print("[MEMORY] AllThingsTalk Device ID: ");
-  Serial.println(deviceId);
-//  Serial.print("[MEMORY] AllThingsTalk Device Token: ");
-//  Serial.println(deviceToken);
+  if (String(okOffset) != String("OK")) {
+    Serial.print("[MEMORY] Temperature Offset: Nothing in Memory. Using default: ");
+    Serial.println(bmeTemperatureOffset);
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar));
+  } else {
+    bmeTemperatureOffset = atof(bmeTemperatureOffsetChar); // Store the char that was in memory as a double (lazy)
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Update the value on WiFi Configuration Portal
+    Serial.print("[MEMORY] Temperature Offset: ");
+    Serial.print(bmeTemperatureOffsetChar);
+    Serial.print("°C (Float: ");
+    Serial.print(bmeTemperatureOffset);
+    Serial.println("°C)");
+  }
 }
 
-void saveCredentials() { // Saves new ATT credentials in memory and connects to AllThingsTalk
-  Serial.println("[MEMORY] Now saving AllThingsTalk Credentials in memory.");
+void saveData() { // Saves new ATT credentials in memory and connects to AllThingsTalk
+  Serial.println("[MEMORY] Saving data in persistent memory...");
   bool deviceIdCanBeSaved = false;
   bool deviceTokenCanBeSaved = false;
-  
+  bool tempOffsetCanBeSaved = false;
+
   if (sizeof(portalDeviceID.getValue()) >= sizeof(deviceId)) {
     Serial.print("[MEMORY] Won't save Device ID '");
-    Serial.print(deviceToken);
+    Serial.print(portalDeviceID.getValue());
     Serial.println("' because it's too long");
   } else if (String(portalDeviceID.getValue()) == "") {
     Serial.println("[MEMORY] Won't save Device ID because it's empty.");
+  } else if (String(portalDeviceID.getValue()) == String(deviceId)) {
+    Serial.print("[MEMORY] Won't save Device ID '");
+    Serial.print(portalDeviceID.getValue());
+    Serial.println("' because it's the same as the current one.");
   } else {
     sprintf(deviceId, "%s", portalDeviceID.getValue());
-    deviceIdCanBeSaved = true;
     Serial.print("[MEMORY] Saving Device ID: ");
     Serial.println(deviceId);
+    deviceIdCanBeSaved = true;
   }
 
   if (sizeof(portalDeviceToken.getValue()) >= sizeof(deviceToken)) {
     Serial.print("[MEMORY] Won't save Device Token '");
-    Serial.print(deviceToken);
+    Serial.print(portalDeviceToken.getValue());
     Serial.println("' because it's too long");
   } else if (String(portalDeviceToken.getValue()) == "") {
     Serial.println("[MEMORY] Won't save Device Token because it's empty.");
+  } else if (String(portalDeviceToken.getValue()) == String(deviceToken)) {
+    Serial.print("[MEMORY] Won't save Device Token '");
+    Serial.print(portalDeviceToken.getValue());
+    Serial.println("' because it's the same as the current one.");
   } else {
     sprintf(deviceToken, "%s", portalDeviceToken.getValue());
-    deviceTokenCanBeSaved = true;
     Serial.print("[MEMORY] Saving Device Token: ");
     Serial.println(deviceToken);
+    deviceTokenCanBeSaved = true;
   }
+
+  if (sizeof(portalTemperatureOffset.getValue()) >= sizeof(bmeTemperatureOffsetChar)) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.println("' because it's too long.");
+  } else if (String(portalTemperatureOffset.getValue()) == String(bmeTemperatureOffsetChar)) {
+    Serial.println("[MEMORY] Won't save Temperature Offset because it's the same as current value.");
+  } else if (!isNumber(portalTemperatureOffset.getValue())) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.println("' because it's not a number.");
+  } else if (atof(portalTemperatureOffset.getValue()) > bmeTemperatureOffsetMax) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.print("' because it's above the maximum of ");
+    Serial.println(bmeTemperatureOffsetMax);
+  } else if (atof(portalTemperatureOffset.getValue()) < bmeTemperatureOffsetMin) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.print("' because it's below the minimum of ");
+    Serial.println(bmeTemperatureOffsetMin);
+  } else if (String(portalTemperatureOffset.getValue()) == "") {
+    Serial.println("[MEMORY] Won't save Temperature Offset because it's empty.");
+  } else {
+    sprintf(bmeTemperatureOffsetChar, "%s", portalTemperatureOffset.getValue()); // Convert const char* to char array for saving in memory
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Set WiFi Configuration Portal to show the real value of offset
+    bmeTemperatureOffset = atof(bmeTemperatureOffsetChar); // Convert the entered value to double (even though the variable is a float - I know, I know...)
+    Serial.print("[MEMORY] Saving Temperature Offset: ");
+    Serial.print(bmeTemperatureOffsetChar);
+    Serial.print("°C (Float: ");
+    Serial.print(bmeTemperatureOffset);
+    Serial.println("°C)");
+    // Reset average temperature and humidity values in case the offset was changed during device operation since already-existing averaging data would be wrong due to new temperature offset.
+    temp.reset();
+    hum.reset();
+    tempOffsetCanBeSaved = true;
+  }
+
+  portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Set WiFi Configuration Portal to show real value (in case user entered it wrong and it was disregarded)
   
-  if (deviceIdCanBeSaved || deviceTokenCanBeSaved) {
-    EEPROM.begin(EEPROMsize);
-    if (deviceIdCanBeSaved) { 
-      EEPROM.put(EEPROM_attStartAddress, deviceId);
-    }
-    if (deviceTokenCanBeSaved) {
-      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId), deviceToken);
-    }
+  if (deviceIdCanBeSaved || deviceTokenCanBeSaved || tempOffsetCanBeSaved) {
     char ok[2+1] = "OK";
-    EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), ok);
+    EEPROM.begin(EEPROMsize);
+    if (deviceIdCanBeSaved || deviceTokenCanBeSaved) {
+      if (deviceIdCanBeSaved) {
+        EEPROM.put(EEPROM_attStartAddress, deviceId);
+      }
+      if (deviceTokenCanBeSaved) {
+        EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId), deviceToken);
+      }
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), ok);
+    }
+    if (tempOffsetCanBeSaved) {
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(ok), bmeTemperatureOffsetChar);
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(ok)+sizeof(bmeTemperatureOffsetChar), ok);
+    }
     if (EEPROM.commit()) {
       Serial.println("[MEMORY] Data saved.");
       EEPROM.end();
@@ -527,7 +611,23 @@ void saveCredentials() { // Saves new ATT credentials in memory and connects to 
   }
 }
 
-void connectAfterNewCredentials() {
+bool isNumber(const char* value) {
+  if (value[0] != '-' && value[0] != '+' && !isDigit(value[0])) {
+    return false;
+  }
+  if (value[1] != '\0') {
+    int i = 1;
+    do {
+      if (!isDigit(value[i]) && value[i] != '.') {
+        return false;
+      }
+      i++;
+    } while(value[i] != '\0');
+  }
+  return true;
+}
+
+void connectAfterSavingData() {
   connectMQTT();
 }
 
@@ -541,12 +641,12 @@ void factoryReset() { // Deletes WiFi and AllThingsTalk credentials and reboots 
   wm.resetSettings();
   ESP.eraseConfig();
   EEPROM.begin(EEPROMsize);
-  for (int i=0; i <= sizeof(deviceId)+sizeof(deviceToken)+3; i++) {
+  for (int i=EEPROM_attStartAddress; i <= sizeof(deviceId)+sizeof(deviceToken)+3+sizeof(bmeTemperatureOffsetChar)+3; i++) {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();
   EEPROM.end();
-  Serial.println("KLIMERKO HAS BEEN FACTORY RESET. ALL CREDENTIALS HAVE BEEN DELETED. REBOOTING IN 5 SECONDS...");
+  Serial.println("[SYSTEM] Klimerko has been factory reset. All data has been erased. Rebooting in 5 seconds.");
   delay(5000);
   ESP.restart();
 }
@@ -825,10 +925,11 @@ void initWiFi() {
   wm.setDebugOutput(false);
   wm.addParameter(&portalDeviceID);
   wm.addParameter(&portalDeviceToken);
+  wm.addParameter(&portalTemperatureOffset);
   wm.addParameter(&portalDisplayFirmwareVersion);
   wm.addParameter(&portalDisplayCredits);
-  wm.setSaveParamsCallback(saveCredentials);
-  wm.setSaveConfigCallback(connectAfterNewCredentials);
+  wm.setSaveParamsCallback(saveData);
+  wm.setSaveConfigCallback(connectAfterSavingData);
   wm.setWebServerCallback(wifiConfigWebServerStarted);
   wm.setAPCallback(wifiConfigStarted);
   wm.setConfigPortalBlocking(false);
@@ -846,17 +947,12 @@ void initWiFi() {
   wm.setWiFiAutoReconnect(true);
   WiFi.mode(WIFI_STA);
   Serial.print("[MEMORY] WiFi SSID: ");
-  Serial.println((String)wm.getWiFiSSID());
+  if (wm.getWiFiIsSaved()) {
+    Serial.println((String)wm.getWiFiSSID());
+  } else {
+    Serial.println("Nothing in Memory");
+  }
   connectWiFi();
-//  // Start WiFi Configuration Mode automatically if there's no credentials stored
-//  if (wm.getWiFiIsSaved()) {
-//    Serial.println((String)wm.getWiFiSSID());
-//    connectWiFi();
-//  } else {
-//    Serial.println("None");
-//    wifiConnectionLost = true;
-//    wifiConfigStart();
-//  }
 }
 
 void initAvg() {
@@ -895,7 +991,7 @@ void setup() {
   initPMS();
   initBME();
   generateID();
-  getCredentials();
+  restoreData();
   initWiFi();
   initMQTT();
   Serial.println("");
@@ -907,5 +1003,5 @@ void loop() {
   maintainMQTT();
   wifiConfigLoop();
   buttonLoop();
-  ledLoop();
+  ledLoop();  
 }
