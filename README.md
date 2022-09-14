@@ -31,7 +31,7 @@ This guide is in chronological order, so try not to skip through parts if you're
 * [Software](#software)
   * [Installing ESP8266 Support](#installing-esp8266-support)
   * [Uploading Firmware](#uploading-firmware)
-  * [Configuring Klimerko Credentials](#configuring-klimerko-credentials)
+  * [Configuring Klimerko Credentials and Temperature Offset](#configuring-klimerko-credentials-and-temperature-offset)
 * [Cloud Platform (2/2)](#cloud-platform-22)
   * [Configure Device](#configure-device)
   * [Share Data](#share-data)
@@ -229,7 +229,7 @@ Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to d
   - If you're running **MacOS**, choose */dev/cu.SLAB_USBtoUART*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
-## Configuring Klimerko Credentials
+## Configuring Klimerko Credentials and Temperature Offset
 > Since Klimerko Firmware version 2.0.0, the process of entering WiFi & Platform credentials has been immensely simplified by introducing WiFi Configuration Mode, a feature where Klimerko itself becomes a WiFi Access Point to which you can connect to using your computer or smartphone and then configure the credentials using a simple web interface that opens up automatically once you're connected to your Klimerko.  
 
 You need tell your Klimerko which credentials to use to connect to the platform and to which WiFi to connect to: 
@@ -245,6 +245,8 @@ You need tell your Klimerko which credentials to use to connect to the platform 
   > NodeMCU only supports 2.4GHz, so make sure the network you're trying to connect your Klimerko to **is not** a 5GHz network.
 - Select your WiFi network from the list (or manually enter WiFi network name if you're not in range of the network you plan to use your Klimerko on), enter your WiFi Password and copy/paste the AllThingsTalk Device ID and Device Token that you noted in previous step ([Cloud Platform Credentials](#cloud-platform-12))
   > If you are updating your credentials, it is possible to only update some of them by leaving other fields empty. The empty fields will not overwrite the values stored in memory when saving.
+- You can set a custom **Temperature Offset** if you wish. This will affect temperature readings from the device and humidity readings will be compensated for the temperature offset as well.
+  > Configurable Temperature Offset has been introduced in Firmware Version 2.1.0. The default offset is `-4°C`. Decimals, negative and positive values are supported (e.g. `-1.2`, `3.58`, `+3.58`, `-7.43`). Positive values can be set with or without the `+` prefix. The maximum positive offset is 25°C, and maximum negative is -25°C. If you wish to use the default value, simply leave the **Temperature Offset** field as it is. As opposed to WiFi Credentials and AllThingsTalk Credentials, the Temperature Offset field always displays the currently used value.
 - Click ***"Save"***. 
 - Klimerko has now automatically shut down the WiFi Configuration Mode (the blue LED stops shining constantly) and your computer/smartphone will disconnect from "KLIMERKO-XXX" network. The WiFi Configuration Portal will automatically close on your computer/smartphone only if it was automatically opened. Otherwise, you'll need to close the browser tab.
 - Your Klimerko will now attempt to connect to WiFi and AllThingsTalk, indicated by slow blinking of the LED light.
@@ -437,7 +439,7 @@ If your device is connected, but some assets are not being updated (or only "Int
 ## Factory Reset your Klimerko
   - Press and hold the ***FLASH*** button on the NodeMCU board for at least 15 seconds.
   - The blue LED should flash rapidly for 2 seconds and then stay on.
-  - Your Klimerko has now deleted all credentials from itself and will restart shortly.
+  - Your Klimerko has now deleted all credentials and temperature offset data from itself and will restart shortly.
   - Once the LED turns off, Klimerko has been restarted.
   - The LED will now blink slowly, indicating it's trying to connect to WiFi and AllThingsTalk (but it can't, since there's no credentials)
-  - You can now follow [Configuring Klimerko Credentials](#configuring-klimerko-credentials) again to enter the credentials.
+  - You can now follow [Configuring Klimerko Credentials and Temperature Offset](#configuring-klimerko-credentials-and-temperature-offset) again.
