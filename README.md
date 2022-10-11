@@ -201,7 +201,7 @@ This is a tool that's used to send the "firmware" or "program" to your device.
 
 > If you already have Arduino IDE, make sure it's **at least** version 1.8.15
 
-- Download and install [Arduino IDE](https://www.arduino.cc/en/Main/software) 
+- Download and install [Arduino IDE](https://www.arduino.cc/en/software) 
 (choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues).
 
 - If you're running **Apple's MacOS**, also [download and install the CP2102 Driver](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip) in order to enable your Mac to recognize Klimerko for further steps.
