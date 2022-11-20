@@ -1,183 +1,229 @@
-/*  
- *   ------------------------------------------- Project "KLIMERKO" ---------------------------------------------
+/*  ------------------------------------------- Project "KLIMERKO" ---------------------------------------------
  *  Citizen Air Quality measuring device with cloud monitoring, built at https://descon.me for the whole world.
  *  Programmed, built and maintained by Vanja Stanic // www.vanjastanic.com
- *  
+ *  ------------------------------------------------------------------------------------------------------------
  *  This is a continued effort from https://descon.me/2018/winning-product/
  *  Supported by ISOC (Internet Society, Belgrade Chapter) // https://isoc.rs
  *  IoT Cloud Services and Communications SDK by AllThingsTalk // www.allthingstalk.com/
  *  3D Case for the device designed and manufactured by Dusan Nikic // nikic.dule@gmail.com
  *  ------------------------------------------------------------------------------------------------------------
- *  
  *  This sketch is downloaded from https://github.com/DesconBelgrade/Klimerko
  *  Head over there to read instructions and more about the project.
  *  Do not change anything in here unless you know what you're doing. Just upload this sketch to your device.
  *  You'll configure your WiFi and Cloud credentials once the sketch is uploaded to the device by 
- *  opening Serial Monitor, restarting the device (RST button on NodeMCU), writing "config" in Serial Monitor 
- *  and following the instructions shown in Serial Monitor.
- *  
+ *  pressing the FLASH button on the NodeMCU for 2 seconds and connecting to Klimerko using any WiFi-enabled device.
+ *  ------------------------------------------------------------------------------------------------------------
  *  Textual Air Quality Scale is based on PM10 criteria defined by RS Government (http://www.amskv.sepa.gov.rs/kriterijumi.php)
  *  Excellent (0-20), Good (21-40), Acceptable (41-50), Polluted (51-100), Very Polluted (Over 100)
  */
 
-#include "src/AllThingsTalk/AllThingsTalk_WiFi.h"
 #include "src/AdafruitBME280/Adafruit_Sensor.h"
 #include "src/AdafruitBME280/Adafruit_BME280.h"
 #include "src/pmsLibrary/PMS.h"
 #include "src/movingAvg/movingAvg.h"
+#include "src/WiFiManager/WiFiManager.h"
+#include "src/PubSubClient/PubSubClient.h"
+#include "src/ArduinoJson-v6.18.5.h"
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <EEPROM.h>
 
-String firmwareVersion = "1.3.0";
-int sendInterval = 15; // [MINUTES] Default sensor data sending interval
-int wakeInterval = 30; // [SECONDS] Seconds to activate sensor before reading it
-int averageSamples = 10; // Number of samples used to average values from sensors
-int deviceRestartWait = 3; // Seconds to wait when restarting NodeMCU
-bool noSleep = false;
-// Pins to which the PMS7003 is connected to
-const uint8_t pmsTX = D5;
-const uint8_t pmsRX = D6;
-const char *airQuality, *airQualityRaw;
-unsigned long currentTime, lastReadTime, lastSendTime;
-int avgTemperature, avgHumidity, avgPressure, avgPM1, avgPM25, avgPM10;
-bool firstReading = true;
-bool pmsWoken = false;
-String wifiName, wifiPassword, deviceId, deviceToken;
-String wifiNameTemp, wifiPasswordTemp, deviceIdTemp, deviceTokenTemp;
-int wifiName_EEPROM_begin = 0;
-int wifiName_EEPROM_end = 255;
-int wifiPassword_EEPROM_begin = 256;
-int wifiPassword_EEPROM_end = 511;
-int deviceId_EEPROM_begin = 512;
-int deviceId_EEPROM_end = 767;
-int deviceToken_EEPROM_begin = 768;
-int deviceToken_EEPROM_end = 1024;
-int EEPROMsize = 1024;
-String dataDivider = ";";
-// Assets to be published to
-char* PM1_ASSET         = "pm1";
-char* PM2_5_ASSET       = "pm2-5";
-char* PM10_ASSET        = "pm10";
-char* AQ_ASSET          = "air-quality";
-char* TEMPERATURE_ASSET = "temperature";
-char* HUMIDITY_ASSET    = "humidity";
-char* PRESSURE_ASSET    = "pressure";
-char* INTERVAL_ASSET    = "interval";
+#define BUTTON_PIN     0
+#define pmsTX          D5
+#define pmsRX          D6
 
-WifiCredentials wifiCreds = WifiCredentials("", ""); // Don't write anything here
-DeviceConfig deviceCreds = DeviceConfig("", ""); // Don't write anything here
-Device device = Device(wifiCreds, deviceCreds);
-Adafruit_BME280 bme;
+// ------------------------- Device -----------------------------------------------------
+String         firmwareVersion         = "2.1.0";
+const char*    firmwareVersionPortal   =  "<p>Firmware Version: 2.1.0</p>";
+char           klimerkoID[32];
+
+// -------------------------- WiFi ------------------------------------------------------
+const int      wifiReconnectInterval   = 60;
+bool           wifiConnectionLost      = true;
+unsigned long  wifiReconnectLastAttempt;
+
+// ------------------- WiFi Configuration Portal ----------------------------------------
+char const     *wifiConfigPortalPassword = "ConfigMode"; // Password for WiFi Configuration Portal WiFi Network
+const int      wifiConfigTimeout       = 1800;         // Seconds before WiFi Configuration expires
+unsigned long  wifiConfigActiveSince;
+
+// -------------------------- MQTT ------------------------------------------------------
+const char*    MQTT_SERVER             = "api.allthingstalk.io";
+const uint16_t MQTT_PORT               = 1883;
+const char*    MQTT_PASSWORD           = "arbitrary";
+uint16_t       MQTT_MAX_MESSAGE_SIZE   = 2048;
+char           deviceId[32], deviceToken[64];
+
+const int      mqttReconnectInterval   = 30; // Seconds between retries
+bool           mqttConnectionLost      = true;
+unsigned long  mqttReconnectLastAttempt;
+
+char*          PM1_ASSET               = "pm1";
+char*          PM2_5_ASSET             = "pm2-5";
+char*          PM10_ASSET              = "pm10";
+char*          AQ_ASSET                = "air-quality";
+char*          TEMPERATURE_ASSET       = "temperature";
+char*          TEMP_OFFSET_ASSET       = "temperature-offset";
+char*          HUMIDITY_ASSET          = "humidity";
+char*          PRESSURE_ASSET          = "pressure";
+char*          INTERVAL_ASSET          = "interval";
+char*          FIRMWARE_ASSET          = "firmware";
+char*          WIFI_SIGNAL_ASSET       = "wifi-signal";
+
+// -------------------------- BUTTON ------------------------------------------------------
+const int      buttonLongPressTime     = 15000; // (milliseconds) Everything above this is considered a long press
+const int      buttonMediumPressTime   = 1000;  // (milliseconds) Everything above this and below long press time is considered a medium press
+const int      buttonShortPressTime    = 50;    // (milliseconds) Everything above this and below medium press time is considered a short press
+unsigned long  buttonPressedTime       = 0;
+unsigned long  buttonReleasedTime      = 0;
+bool           buttonPressed           = false;
+bool           buttonLongPressDetected = false;
+int            buttonLastState         = HIGH;
+int            buttonCurrentState;
+
+// -------------------------- LED ---------------------------------------------------------
+bool           ledState                = false;
+bool           ledSuccessBlink         = false;
+const int      ledBlinkInterval        = 1000;  // (milliseconds) How often to blink LED when there's no connection
+unsigned long  ledLastUpdate;
+
+// --------------------- SENSORS (GENERAL) ------------------------------------------------
+uint8_t        dataPublishInterval     = 15;    // [MINUTES] Default sensor data sending interval
+const uint8_t  sensorAverageSamples    = 10;    // Number of samples used to average values from sensors
+const int      sensorRetriesUntilConsideredOffline = 3;
+bool           dataPublishFailed       = false; // Keeps track if a payload has failed to send so we can retry
+unsigned long  sensorReadTime, dataPublishTime;
+
+// -------------------------- PMS7003 -----------------------------------------------------
+const uint8_t  pmsWakeBefore           = 30;    // [SECONDS] Seconds PMS sensor should be active before reading it
+bool           pmsSensorOnline         = true;
+int            pmsSensorRetry          = 0;
+bool           pmsNoSleep              = false;
+bool           pmsWoken                = false;
+const char     *airQuality, *airQualityRaw;
+int            avgPM1, avgPM25, avgPM10;
+
+// -------------------------- BME280 -----------------------------------------------------
+bool           bmeSensorOnline                = true;
+int            bmeSensorRetry                 = 0;
+float          bmeTemperatureOffset           = -4;   // Default temperature offset
+char           bmeTemperatureOffsetChar[8];           // Used for WiFi Configuration Portal and memory
+const char     bmeTemperatureOffsetDefault[8] = "-4"; // Used for WiFi Configuration Portal and memory
+const int      bmeTemperatureOffsetMax        = 25;
+const int      bmeTemperatureOffsetMin        = -25;
+float          avgTemperature, avgHumidity, avgPressure;
+
+// -------------------------- MEMORY -----------------------------------------------------
+const uint16_t EEPROM_attStartAddress  = 0;
+const uint16_t EEPROMsize              = 256;
+
+// -------------------------- OBJECTS -----------------------------------------------------
+WiFiManager wm;
+WiFiManagerParameter portalDeviceID("device_id", "AllThingsTalk Device ID", deviceId, 32);
+WiFiManagerParameter portalDeviceToken("device_token", "AllThingsTalk Device Token", deviceToken, 64);
+WiFiManagerParameter portalTemperatureOffset("temperature_offset", "Temperature Offset", bmeTemperatureOffsetChar, 8);
+WiFiManagerParameter portalDisplayFirmwareVersion(firmwareVersionPortal);
+WiFiManagerParameter portalDisplayCredits("Firmware Designed and Developed by Vanja Stanic");
+WiFiClient networkClient;
+PubSubClient mqtt(networkClient);
 SoftwareSerial pmsSerial(pmsTX, pmsRX);
 PMS pms(pmsSerial);
 PMS::DATA data;
-CborPayload payload;
-movingAvg pm1(averageSamples);
-movingAvg pm25(averageSamples);
-movingAvg pm10(averageSamples);
-movingAvg temp(averageSamples);
-movingAvg hum(averageSamples);
-movingAvg pres(averageSamples);
+Adafruit_BME280 bme;
+movingAvg pm1(sensorAverageSamples);
+movingAvg pm25(sensorAverageSamples);
+movingAvg pm10(sensorAverageSamples);
+movingAvg temp(sensorAverageSamples);
+movingAvg hum(sensorAverageSamples);
+movingAvg pres(sensorAverageSamples);
 
-// Runs only at boot
-void setup() {
-  Serial.begin(115200);
-  // The following gives the user time to open serial monitor
-  // and his computer to recognize the COM port for klimerko
-  // before outputting data
-  for (int i=5; i > 0; i--) {
-    Serial.print("Booting in ");
-    Serial.print(i);
-    Serial.println(" seconds");
-    delay(1000);
-  }
-  ESP.eraseConfig();
-  pmsSerial.begin(9600);
-  pmsPower(false);
-  bme.begin(0x76);
-  Serial.println("");
-  Serial.println(" ------------------------- Project 'KLIMERKO' ----------------------------");
-  Serial.println("|              https://github.com/DesconBelgrade/Klimerko                 |");
-  Serial.println("|                       www.vazduhgradjanima.rs                           |");
-  Serial.print("|                       Firmware Version: ");
-  Serial.print(firmwareVersion);
-  Serial.println("                           |");
-  Serial.println("|  Write 'config' to configure your credentials (expires in 10 seconds)   |");
-  Serial.println(" -------------------------------------------------------------------------");
-  getCredentials();
-  while(millis() < 14000) {
-    configureCredentials();
-  }
-  credentialsSDK();
-  device.debugPort(Serial);
-  device.wifiSignalReporting(true);
-  device.connectionLed(true);
-  device.setActuationCallback(INTERVAL_ASSET, controlInterval);
-  device.createAsset("firmware", "Firmware Version", "sensor", "string"); // Create asset on AllThingsTalk for firmware version
-  device.init();
-  device.send("firmware", firmwareVersion); // Send the current firmware version to newly created AllThingsTalk asset
-  publishInterval(); // Send current reporting interval
-  pm1.begin();
-  pm25.begin();
-  pm10.begin();
-  temp.begin();
-  hum.begin();
-  pres.begin();
-  Serial.println("");
-  Serial.println(">>>>>>>>>>>>>>>>>>  Your Klimerko is up and running!  <<<<<<<<<<<<<<<<<<<<<");
-  Serial.print("Sensor data is read every ");
-  Serial.print(readIntervalSeconds());
-  Serial.print(" seconds (for averaging) and published every ");
-  Serial.print(sendInterval);
-  Serial.println(" minutes.");
-  Serial.println("You can change the sending interval from your AllThingsTalk Maker.");
-  Serial.println("Sensor data read interval dynamically adjusts based on the sending interval.");
-  Serial.println("Average values are sent to the cloud - You can observe current sensor data in this window.");
-  Serial.println("");
-}
-
-// Function to read both sensors at the same time
-void readSensors() {
+void sensorLoop() { // Reads and publishes sensor data and wakes up pms sensor in predefined intervals
   // Check if it's time to wake up PMS7003
-  if (millis() - lastReadTime >= readIntervalMillis() - (wakeInterval * 1000) && !pmsWoken) {
-    Serial.println("System: Now waking up PMS7003");
+  if (millis() - sensorReadTime >= readIntervalMillis() - (pmsWakeBefore * 1000) && !pmsWoken && pmsSensorOnline) {
+    Serial.println("[PMS] Now waking up Air Quality Sensor");
     pmsPower(true);
   }
   
   // Read sensor data
-  if (millis() - lastReadTime >= readIntervalMillis()) {
-    Serial.println("------------------------------DATA------------------------------");
-    readPMS();
-    readBME();
-    Serial.println("----------------------------------------------------------------");
-    if (!noSleep) {
-      Serial.print("System: Air Quality Sensor will sleep until ");
-      Serial.print(wakeInterval);
-      Serial.println(" seconds before next reading.");
-      pmsPower(false);
-    }
-    lastReadTime = millis();
+  if (millis() - sensorReadTime >= readIntervalMillis()) {
+    sensorReadTime = millis();
+    readSensorData();
   }
-  
+
   // Send average sensor data
-  if (millis() - lastSendTime >= sendInterval * 60000) {
-    Serial.println("Now sending averaged data to AllThingsTalk...");
-    payload.reset();
-    payload.set(AQ_ASSET, airQuality);
-    payload.set(PM1_ASSET, avgPM1);
-    payload.set(PM2_5_ASSET, avgPM25);
-    payload.set(PM10_ASSET, avgPM10);
-    payload.set(TEMPERATURE_ASSET, avgTemperature);
-    payload.set(HUMIDITY_ASSET, avgHumidity);
-    payload.set(PRESSURE_ASSET, avgPressure);
-    device.send(payload);
-    lastSendTime = millis();
+  if (millis() - dataPublishTime >= dataPublishInterval * 60000) {
+    if (!wifiConnectionLost) {
+      if (!mqttConnectionLost) {
+        dataPublishFailed = false;
+        dataPublishTime = millis();
+        publishSensorData();
+      } else {
+        if (!dataPublishFailed) {
+          Serial.println("[DATA] Can't send sensor data because Klimerko is not connected to AllThingsTalk");
+          dataPublishFailed = true;
+        }
+      }
+    } else {
+      if (!dataPublishFailed) {
+        Serial.println("[DATA] Can't send sensor data because Klimerko is not connected to WiFi");
+        dataPublishFailed = true;
+      }
+    }
   }
 }
 
-// Function that reads data from the PMS7003
-void readPMS() {
+void readSensorData() {
+  Serial.println("------------------------------DATA------------------------------");
+  readPMS();
+  readBME();
+  Serial.println("----------------------------------------------------------------");
+  if (!pmsNoSleep && pmsSensorOnline) {
+    Serial.print("[PMS] Air Quality Sensor will sleep until ");
+    Serial.print(pmsWakeBefore);
+    Serial.println(" seconds before next reading.");
+    pmsPower(false);
+  }
+}
+
+void publishSensorData() {
+  char JSONmessageBuffer[512];
+  DynamicJsonDocument doc(512);
+  if (pmsSensorOnline) {
+    JsonObject airQualityJson = doc.createNestedObject(AQ_ASSET);
+    airQualityJson["value"] = airQuality;
+    JsonObject pm1Json = doc.createNestedObject(PM1_ASSET);
+    pm1Json["value"] = avgPM1;
+    JsonObject pm25Json = doc.createNestedObject(PM2_5_ASSET);
+    pm25Json["value"] = avgPM25;
+    JsonObject pm10Json = doc.createNestedObject(PM10_ASSET);
+    pm10Json["value"] = avgPM10;
+  } else {
+    Serial.println("[DATA] Won't send Air Quality Sensor (PMS7003) data because it seems to be offline.");
+  }
+  if (bmeSensorOnline) {
+    JsonObject temperatureJson = doc.createNestedObject(TEMPERATURE_ASSET);
+    temperatureJson["value"] = avgTemperature;
+    JsonObject humidityJson = doc.createNestedObject(HUMIDITY_ASSET);
+    humidityJson["value"] = avgHumidity;
+    JsonObject pressureJson = doc.createNestedObject(PRESSURE_ASSET);
+    pressureJson["value"] = avgPressure;
+  } else {
+    Serial.println("[DATA] Won't send Temperature/Humidity/Pressure Sensor (BME280) data because it seems to be offline.");
+  }
+  JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
+  firmwareJson["value"] = firmwareVersion;
+  JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
+  wifiJson["value"] = wifiSignal();
+  serializeJson(doc, JSONmessageBuffer);
+
+  char topic[128];
+  snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
+  mqtt.publish(topic, JSONmessageBuffer, false);
+  Serial.print("[DATA] Published sensor data to AllThingsTalk: ");
+  Serial.println(JSONmessageBuffer);
+}
+
+void readPMS() { // Function that reads data from the PMS7003
   while (pmsSerial.available()) { pmsSerial.read(); }
   pms.requestRead(); // Now get the real data
   
@@ -226,70 +272,106 @@ void readPMS() {
     Serial.println(")");
     Serial.print("PM 1:          ");
     Serial.print(PM1);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM1);
     Serial.println(")");
     Serial.print("PM 2.5:        ");
     Serial.print(PM2_5);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM25);
     Serial.println(")");
     Serial.print("PM 10:         ");
     Serial.print(PM10);
-    Serial.print(" (Average: ");
+    Serial.print(" µg/m³ (Average: ");
     Serial.print(avgPM10);
     Serial.println(")");
+
+    pmsSensorRetry = 0;
+    if (!pmsSensorOnline) {
+      pmsSensorOnline = true;
+      Serial.println("[PMS] Air Quality Sensor (PMS7003) seems to be back online!");
+    }
   } else {
-    Serial.println("System Error: Air Quality Sensor (PMS7003) returned no data on data request this time.");
+    if (pmsSensorOnline) {
+      Serial.println("[PMS] Air Quality Sensor (PMS7003) returned no data on data request this time.");
+      pmsSensorRetry++;
+      if (pmsSensorRetry > sensorRetriesUntilConsideredOffline) {
+        pmsSensorOnline = false;
+        Serial.println("[PMS] Air Quality Sensor (PMS7003) seems to be offline!");
+        pm1.reset();
+        pm25.reset();
+        pm10.reset();
+        initPMS();
+      }
+    } else {
+      Serial.println("[PMS] Air Quality Sensor (PMS7003) is offline.");
+      initPMS();
+    }
   }
 }
 
-// Function for reading data from the BME280 Sensor
-void readBME() {
-  // Save the current BME280 sensor data
-  // BME280 Heats itself up about 1-2 degrees and the NodeMCU
-  // inside the Klimerko's 3D case interferes by about 2 degrees
-  // Because of this, we'll subtract 4 degrees from the raw reading
-  // (do note that the calibration/testing was done at 20*-25* celsius)
-  float temperatureRaw =  bme.readTemperature() - 4;
-  float humidityRaw = bme.readHumidity();
-  float pressureRaw = bme.readPressure() / 100.0F;
+void readBME() { // Function for reading data from the BME280 Sensor
+  float temperatureRaw = bme.readTemperature();
+  float temperature    = temperatureRaw + bmeTemperatureOffset;
+  float humidityRaw    = bme.readHumidity();
+  float humidity       = humidityRaw * exp(243.12 * 17.62 * (temperatureRaw - temperature) / (243.12 + temperatureRaw) / (243.12 + temperature)); // Compensates the RH in accordance to temperature offset so the RH isn't wrong when the temp is offset
+  float pressure       = bme.readPressure() / 100.0F;
 
-  if (temperatureRaw != 0 && humidityRaw != 0) {
-    static char temperature[7];
-    dtostrf(temperatureRaw, 6, 1, temperature);
-    static char humidity[7];
-    dtostrf(humidityRaw, 6, 1, humidity);
-    static char pressure[7];
-    dtostrf(pressureRaw, 6, 0, pressure);
+  if (temperatureRaw > -100 && temperatureRaw < 150 && humidity >= 0 && humidity <= 100) {
+    avgTemperature = temp.reading(temperature*100);
+    avgTemperature = avgTemperature/100;
+    avgHumidity    = hum.reading(humidity*100);
+    avgHumidity    = avgHumidity/100;
+    avgPressure    = pres.reading(pressure*100);
+    avgPressure    = avgPressure/100;
 
-    // Add to average calculation and load current average
-    avgTemperature = temp.reading(temperatureRaw);
-    avgHumidity = hum.reading(humidityRaw);
-    avgPressure = pres.reading(pressureRaw);
-
-    // Print data to Serial port
-    Serial.print("Temperature: ");
+    Serial.print("Temperature:   ");
     Serial.print(temperature);
-    Serial.print(" (Average: ");
+    Serial.print("°C (Average: ");
     Serial.print(avgTemperature);
+    Serial.print(", Raw: ");
+    Serial.print(temperatureRaw);
+    Serial.print(", Offset: ");
+    Serial.print(bmeTemperatureOffset);
     Serial.println(")");
-    Serial.print("Humidity:    ");
+    Serial.print("Humidity:      ");
     Serial.print(humidity);
-    Serial.print(" (Average: ");
+    Serial.print(" % (Average: ");
     Serial.print(avgHumidity);
+    Serial.print(", Raw: ");
+    Serial.print(humidityRaw);
     Serial.println(")");
-    Serial.print("Pressure:    ");
+    Serial.print("Pressure:      ");
     Serial.print(pressure);
-    Serial.print(" (Average: ");
+    Serial.print(" mbar (Average: ");
     Serial.print(avgPressure);
     Serial.println(")");
+
+    bmeSensorRetry = 0;
+    if (!bmeSensorOnline) {
+      bmeSensorOnline = true;
+      Serial.println("[BME] Temperature/Humidity/Pressure Sensor (BME280) is back online!");
+    }
   } else {
-    Serial.print("System Error: Temperature/Humidity/Pressure Sensor (BME280) returned no data on data request this time.");
+    if (bmeSensorOnline) {
+      Serial.println("[BME] Temperature/Humidity/Pressure Sensor (BME280) returned no data this time.");
+      bmeSensorRetry++;
+      if (bmeSensorRetry > sensorRetriesUntilConsideredOffline) {
+        bmeSensorOnline = false;
+        Serial.println("[BME] Temperature/Humidity/Pressure Sensor (BME280) seems to be offline!");
+        temp.reset();
+        hum.reset();
+        pres.reset();
+        initBME();
+      }
+    } else {
+      Serial.println("[BME] Temperature/Humidity/Pressure Sensor (BME280) is offline.");
+      initBME();
+    }
   }
 }
 
-void pmsPower(bool state) {
+void pmsPower(bool state) { // Controls sleep state of PMS sensor
   if (state) {
     pms.wakeUp();
     pms.passiveMode();
@@ -300,254 +382,626 @@ void pmsPower(bool state) {
     while(millis() < now + 100);
     pmsWoken = false;
     pms.sleep();
-    
   }
 }
  
-void controlInterval(int interval) {
+void changeInterval(int interval) { // Changes sensor data reporting interval
   if (interval > 5 && interval <= 60) {
-    sendInterval = interval;
-    noSleep = false;
-    Serial.print("System: Device reporting interval set to ");
+    dataPublishInterval = interval;
+    pmsNoSleep = false;
+    Serial.print("[DATA] Device reporting interval set to ");
     Serial.print(interval);
     Serial.println(" minutes");
-    Serial.print("System: Sensor data will be read every ");
+    Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    publishInterval();
-  } else if (interval <= 5) {
-    sendInterval = 5;
-    noSleep = true;
+    publishDiagnosticData();
+  } else if (interval <= 1) {
+    dataPublishInterval = 1;
+    pmsNoSleep = true;
     pmsPower(true);
-    Serial.println("System: Reporting interval set to 5 minutes (minimum).");
-    Serial.print("System: Sensor data will be read every ");
+    Serial.println("[DATA] Reporting interval set to 1 minute (minimum).");
+    Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    Serial.println("System: Note that this prevents sleeping of Air Quality Sensor and reduces its lifespan.");
-    publishInterval();
-  } else if (interval > 60) {
-    noSleep = false;
-    Serial.print("System: Received command to set reporting interval to ");
+    Serial.println("[DATA] This prevents sleeping of Air Quality Sensor and reduces its lifespan.");
+    publishDiagnosticData();
+  } else if (interval <= 5) {
+    dataPublishInterval = interval;
+    pmsNoSleep = true;
+    pmsPower(true);
+    Serial.print("[DATA] Device reporting interval set to ");
     Serial.print(interval);
-    Serial.println(" minutes but that exceeds the maximum.");
-    Serial.print("System: Reverted back to ");
-    Serial.print(sendInterval);
-    Serial.println(" minutes.");
-    Serial.print("System: Sensor data will be read every ");
+    Serial.println(" minutes");
+    Serial.print("[DATA] Sensor data will be read every ");
     Serial.print(readIntervalSeconds());
     Serial.println(" seconds for averaging.");
-    publishInterval();
+    Serial.println("[DATA] This prevents sleeping of Air Quality Sensor and reduces its lifespan.");
+    publishDiagnosticData();
+  } else if (interval >= 60) {
+    dataPublishInterval = 60;
+    pmsNoSleep = false;
+    Serial.print("[DATA] Device reporting interval set to ");
+    Serial.print(dataPublishInterval);
+    Serial.println(" minutes");
+    Serial.print("[DATA] Sensor data will be read every ");
+    Serial.print(readIntervalSeconds());
+    Serial.println(" seconds for averaging.");
+    publishDiagnosticData();
   }
 }
 
-void publishInterval() {
-  Serial.println("System: Publishing the actual device reporting interval to AllThingsTalk");
-  device.send(INTERVAL_ASSET, sendInterval);
+void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
+  if (!wifiConnectionLost) {
+    if (!mqttConnectionLost) {
+      char JSONmessageBuffer[256];
+      DynamicJsonDocument doc(256);
+      JsonObject dataPublishIntervalJson = doc.createNestedObject(INTERVAL_ASSET);
+      dataPublishIntervalJson["value"] = dataPublishInterval;
+      JsonObject firmwareJson = doc.createNestedObject(FIRMWARE_ASSET);
+      firmwareJson["value"] = firmwareVersion;
+      JsonObject wifiJson = doc.createNestedObject(WIFI_SIGNAL_ASSET);
+      wifiJson["value"] = wifiSignal();
+      JsonObject tempOffsetJson = doc.createNestedObject(TEMP_OFFSET_ASSET);
+      tempOffsetJson["value"] = bmeTemperatureOffset;
+      serializeJson(doc, JSONmessageBuffer);
+    
+      char topic[256];
+      snprintf(topic, sizeof topic, "%s%s%s", "device/", deviceId, "/state");
+      mqtt.publish(topic, JSONmessageBuffer, false);
+      Serial.print("[DATA] Published diagnostic data to AllThingsTalk: ");
+      Serial.println(JSONmessageBuffer);
+    } else {
+      Serial.println("[DATA] Can't send diagnostic data because Klimerko is not connected to AllThingsTalk");
+    }
+  } else {
+    Serial.println("[DATA] Can't send diagnostic data because Klimerko is not connected to WiFi");
+  }
 }
 
 int readIntervalMillis() {
-  int result = (sendInterval * 60000) / averageSamples;
+  int result = (dataPublishInterval * 60000) / sensorAverageSamples;
   return result;
 }
 
 int readIntervalSeconds() {
-  int result = (sendInterval * 60) / averageSamples;
+  int result = (dataPublishInterval * 60) / sensorAverageSamples;
   return result;
 }
 
-void getCredentials() {
-  //Serial.println("System: Loading your credentials...");
+void restoreData() { // Restores AllThingsTalk credentials from EEPROM as well as temperature offset data
+  char okCreds[2+1];
+  char okOffset[2+1];
   EEPROM.begin(EEPROMsize);
-  wifiName = readData(wifiName_EEPROM_begin, wifiName_EEPROM_end);
-  wifiPassword = readData(wifiPassword_EEPROM_begin, wifiPassword_EEPROM_end);
-  deviceId = readData(deviceId_EEPROM_begin, deviceId_EEPROM_end);
-  deviceToken = readData(deviceToken_EEPROM_begin, deviceToken_EEPROM_end);
+  EEPROM.get(EEPROM_attStartAddress, deviceId);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId), deviceToken);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), okCreds);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(okCreds), bmeTemperatureOffsetChar);
+  EEPROM.get(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(okCreds)+sizeof(bmeTemperatureOffsetChar), okOffset);
   EEPROM.end();
-  Serial.print("Device ID (AllThingsTalk): ");
-  Serial.println(deviceId);
-
-//  Serial.print("MEMORY: WiFi Name: ");
-//  Serial.println(wifiName);
-//  Serial.print("MEMORY: WiFi Password: ");
-//  Serial.println(wifiPassword);
-//  Serial.print("MEMORY: ATT Device ID: ");
-//  Serial.println(deviceId);
-//  Serial.print("MEMORY: ATT Device Token: ");
-//  Serial.println(deviceToken);
-}
-
-String readData(int startAddress, int endAddress) {
-  String output;
-  for (int i = startAddress; i < endAddress; ++i) {
-    if (char(EEPROM.read(i)) != ';') {
-      output += String(char(EEPROM.read(i)));
-    } else {
-      i = endAddress;
-    }
+  if (String(okCreds) != String("OK")) {
+    deviceId[0] = 0;
+    deviceToken[0] = 0;
+    Serial.println("[MEMORY] AllThingsTalk Device ID: Nothing in Memory");
+  } else {
+    Serial.print("[MEMORY] AllThingsTalk Device ID: ");
+    Serial.println(deviceId);
+//    portalDeviceID.setValue(deviceId, sizeof(deviceId)); // Set WiFi Configuration Portal to show real value
+//    Serial.print("[MEMORY] AllThingsTalk Device Token: ");
+//    Serial.println(deviceToken);
+//    portalDeviceToken.setValue(deviceToken, sizeof(deviceToken)); // Set WiFi Configuration Portal to show real value
   }
-  return output;
+  if (String(okOffset) != String("OK")) {
+    Serial.print("[MEMORY] Temperature Offset: Nothing in Memory. Using default: ");
+    Serial.println(bmeTemperatureOffset);
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar));
+  } else {
+    bmeTemperatureOffset = atof(bmeTemperatureOffsetChar); // Store the char that was in memory as a double (lazy)
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Update the value on WiFi Configuration Portal
+    Serial.print("[MEMORY] Temperature Offset: ");
+    Serial.print(bmeTemperatureOffsetChar);
+    Serial.print("°C (Float: ");
+    Serial.print(bmeTemperatureOffset);
+    Serial.println("°C)");
+  }
 }
 
-// Convert credentials for SDK readability
-void credentialsSDK() {
-  char *wifiNameChar, *wifiPasswordChar, *deviceIdChar, *deviceTokenChar;
-  wifiNameChar = (char*)malloc(wifiName.length()+1);
-  wifiPasswordChar = (char*)malloc(wifiPassword.length()+1);
-  deviceIdChar = (char*)malloc(deviceId.length()+1);
-  deviceTokenChar = (char*)malloc(deviceToken.length()+1);
-  
-  wifiName.toCharArray(wifiNameChar, wifiName.length()+1);
-  wifiPassword.toCharArray(wifiPasswordChar, wifiPassword.length()+1);
-  deviceId.toCharArray(deviceIdChar, deviceId.length()+1);
-  deviceToken.toCharArray(deviceTokenChar, deviceToken.length()+1);
-  
-  wifiCreds = WifiCredentials(wifiNameChar, wifiPasswordChar);
-  deviceCreds = DeviceConfig(deviceIdChar, deviceTokenChar);
-  device = Device(wifiCreds, deviceCreds);
-}
+void saveData() { // Saves new ATT credentials in memory and connects to AllThingsTalk
+  Serial.println("[MEMORY] Saving data in persistent memory...");
+  bool deviceIdCanBeSaved = false;
+  bool deviceTokenCanBeSaved = false;
+  bool tempOffsetCanBeSaved = false;
 
-void configureCredentials() {
-  if (Serial.available() >= 1) {
-    String cmd = Serial.readString();
-    cmd.trim();
-    if (cmd == "config") {
-      Serial.println("");
-      Serial.println("----------------------CREDENTIALS CONFIGURATION MODE----------------------");
-      Serial.println("            To only change WiFi Credentials, enter 'wifi'");
-      Serial.println("         To only change AllThingsTalk Credentials, enter 'att'");
-      Serial.println("                    To change both, enter 'all'");
-      Serial.println("     Enter anything else to exit Credentials configuration mode...");
-      Serial.println("--------------------------------------------------------------------------");
-      delay(1000);
+  if (sizeof(portalDeviceID.getValue()) >= sizeof(deviceId)) {
+    Serial.print("[MEMORY] Won't save Device ID '");
+    Serial.print(portalDeviceID.getValue());
+    Serial.println("' because it's too long");
+  } else if (String(portalDeviceID.getValue()) == "") {
+    Serial.println("[MEMORY] Won't save Device ID because it's empty.");
+  } else if (String(portalDeviceID.getValue()) == String(deviceId)) {
+    Serial.print("[MEMORY] Won't save Device ID '");
+    Serial.print(portalDeviceID.getValue());
+    Serial.println("' because it's the same as the current one.");
+  } else {
+    sprintf(deviceId, "%s", portalDeviceID.getValue());
+    Serial.print("[MEMORY] Saving Device ID: ");
+    Serial.println(deviceId);
+    deviceIdCanBeSaved = true;
+  }
 
-      while (Serial.available()==0) {}
-      String input = Serial.readString();
-      input.trim();
-      if (input == "wifi") {
-        wifiNameTemp = newCredentials("Enter your new WiFi Name (SSID)");
-        wifiPasswordTemp = newCredentials("Enter your new WiFi Password");
-        promptSave(input);
-      } else if (input == "att") {
-        deviceIdTemp = newCredentials("Enter your new Device ID");
-        deviceTokenTemp = newCredentials("Enter your new Device Token");
-        promptSave(input);
-      } else if (input == "all") {
-        wifiNameTemp = newCredentials("Enter your new WiFi Name (SSID)");
-        wifiPasswordTemp = newCredentials("Enter your new WiFi Password");
-        deviceIdTemp = newCredentials("Enter your new Device ID");
-        deviceTokenTemp = newCredentials("Enter your new Device Token");
-        promptSave(input);
-      } else {
-        Serial.println("System: Exited Credentials Configuration Mode");
+  if (sizeof(portalDeviceToken.getValue()) >= sizeof(deviceToken)) {
+    Serial.print("[MEMORY] Won't save Device Token '");
+    Serial.print(portalDeviceToken.getValue());
+    Serial.println("' because it's too long");
+  } else if (String(portalDeviceToken.getValue()) == "") {
+    Serial.println("[MEMORY] Won't save Device Token because it's empty.");
+  } else if (String(portalDeviceToken.getValue()) == String(deviceToken)) {
+    Serial.print("[MEMORY] Won't save Device Token '");
+    Serial.print(portalDeviceToken.getValue());
+    Serial.println("' because it's the same as the current one.");
+  } else {
+    sprintf(deviceToken, "%s", portalDeviceToken.getValue());
+    Serial.print("[MEMORY] Saving Device Token: ");
+    Serial.println(deviceToken);
+    deviceTokenCanBeSaved = true;
+  }
+
+  if (sizeof(portalTemperatureOffset.getValue()) >= sizeof(bmeTemperatureOffsetChar)) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.println("' because it's too long.");
+  } else if (String(portalTemperatureOffset.getValue()) == String(bmeTemperatureOffsetChar)) {
+    Serial.println("[MEMORY] Won't save Temperature Offset because it's the same as current value.");
+  } else if (!isNumber(portalTemperatureOffset.getValue())) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.println("' because it's not a number.");
+  } else if (atof(portalTemperatureOffset.getValue()) > bmeTemperatureOffsetMax) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.print("' because it's above the maximum of ");
+    Serial.println(bmeTemperatureOffsetMax);
+  } else if (atof(portalTemperatureOffset.getValue()) < bmeTemperatureOffsetMin) {
+    Serial.print("[MEMORY] Won't save Temperature Offset '");
+    Serial.print(portalTemperatureOffset.getValue());
+    Serial.print("' because it's below the minimum of ");
+    Serial.println(bmeTemperatureOffsetMin);
+  } else if (String(portalTemperatureOffset.getValue()) == "") {
+    Serial.println("[MEMORY] Won't save Temperature Offset because it's empty.");
+  } else {
+    sprintf(bmeTemperatureOffsetChar, "%s", portalTemperatureOffset.getValue()); // Convert const char* to char array for saving in memory
+    portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Set WiFi Configuration Portal to show the real value of offset
+    bmeTemperatureOffset = atof(bmeTemperatureOffsetChar); // Convert the entered value to double (even though the variable is a float - I know, I know...)
+    Serial.print("[MEMORY] Saving Temperature Offset: ");
+    Serial.print(bmeTemperatureOffsetChar);
+    Serial.print("°C (Float: ");
+    Serial.print(bmeTemperatureOffset);
+    Serial.println("°C)");
+    // Reset average temperature and humidity values in case the offset was changed during device operation since already-existing averaging data would be wrong due to new temperature offset.
+    temp.reset();
+    hum.reset();
+    tempOffsetCanBeSaved = true;
+  }
+
+  portalTemperatureOffset.setValue(bmeTemperatureOffsetChar, sizeof(bmeTemperatureOffsetChar)); // Set WiFi Configuration Portal to show real value (in case user entered it wrong and it was disregarded)
+  
+  if (deviceIdCanBeSaved || deviceTokenCanBeSaved || tempOffsetCanBeSaved) {
+    char ok[2+1] = "OK";
+    EEPROM.begin(EEPROMsize);
+    if (deviceIdCanBeSaved || deviceTokenCanBeSaved) {
+      if (deviceIdCanBeSaved) {
+        EEPROM.put(EEPROM_attStartAddress, deviceId);
       }
+      if (deviceTokenCanBeSaved) {
+        EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId), deviceToken);
+      }
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken), ok);
+    }
+    if (tempOffsetCanBeSaved) {
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(ok), bmeTemperatureOffsetChar);
+      EEPROM.put(EEPROM_attStartAddress+sizeof(deviceId)+sizeof(deviceToken)+sizeof(ok)+sizeof(bmeTemperatureOffsetChar), ok);
+    }
+    if (EEPROM.commit()) {
+      Serial.println("[MEMORY] Data saved.");
+      EEPROM.end();
     } else {
-      Serial.println("Command not recognized. If you wish to configure your device, enter 'config'");
+      Serial.println("[MEMORY] Data couldn't be saved to memory.");
+      EEPROM.end();
     }
   }
 }
 
-String newCredentials(String inputMessage) {
-  Serial.print(inputMessage);
-  Serial.print(": ");
-  while (Serial.available()==0) {}
-  String inputData = Serial.readString();
-  inputData.trim();
-  Serial.println(inputData);
-  if (inputData.length() >= 255) {
-    Serial.println("System ERROR: Your credentials are too long! Maximum is 255");
-    restartDevice();
-  } else if (inputData.indexOf(";") != -1) {
-    Serial.print("System ERROR: Your credentials can't contain the '");
-    Serial.print(dataDivider);
-    Serial.println("' character");
-    restartDevice();
-  } else {
-    return inputData;
+bool isNumber(const char* value) {
+  if (value[0] != '-' && value[0] != '+' && !isDigit(value[0])) {
+    return false;
   }
+  if (value[1] != '\0') {
+    int i = 1;
+    do {
+      if (!isDigit(value[i]) && value[i] != '.') {
+        return false;
+      }
+      i++;
+    } while(value[i] != '\0');
+  }
+  return true;
 }
 
-void promptSave(String input) {
-  Serial.println("System: Save this configuration? Enter 'yes' to save and restart the device. Enter anything else to cancel.");
-  while (Serial.available()==0) {}
-  String confirm = Serial.readString();
-  confirm.trim();
-  if (confirm == "yes") {
-    Serial.println("System: New credentials are being saved.");
-    saveCredentials(input);
-    restartDevice();
-  } else {
-    Serial.println("System: New credentials will NOT be saved. Normal operation resumed.");
-  }
+void connectAfterSavingData() {
+  connectMQTT();
 }
 
-void saveCredentials(String whatToSave) {
+void factoryReset() { // Deletes WiFi and AllThingsTalk credentials and reboots Klimerko
+  for (int i=0;i<40;i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(50);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(50);
+  }
+  wm.resetSettings();
+  ESP.eraseConfig();
   EEPROM.begin(EEPROMsize);
-  whatToSave.trim();
-  
-  if (whatToSave == "wifi") {
-    formatMemory(wifiName_EEPROM_begin, wifiPassword_EEPROM_end);
-    writeData(wifiNameTemp, wifiName_EEPROM_begin);
-    writeData(wifiPasswordTemp, wifiPassword_EEPROM_begin);
+  for (int i=EEPROM_attStartAddress; i <= sizeof(deviceId)+sizeof(deviceToken)+3+sizeof(bmeTemperatureOffsetChar)+3; i++) {
+    EEPROM.write(i, 0);
   }
-  
-  if (whatToSave == "att") {
-    formatMemory(deviceId_EEPROM_begin, deviceToken_EEPROM_end);
-    writeData(deviceIdTemp, deviceId_EEPROM_begin);
-    writeData(deviceTokenTemp, deviceToken_EEPROM_begin);
-  }
-
-  if (whatToSave == "all") {
-    formatMemory(wifiName_EEPROM_begin, deviceToken_EEPROM_end);
-    writeData(wifiNameTemp, wifiName_EEPROM_begin);
-    writeData(wifiPasswordTemp, wifiPassword_EEPROM_begin);
-    writeData(deviceIdTemp, deviceId_EEPROM_begin);
-    writeData(deviceTokenTemp, deviceToken_EEPROM_begin);
-  }
-
-  if (EEPROM.commit()) {
-    Serial.println("System: Data saved.");
-    EEPROM.end();
-  } else {
-    Serial.println("System Error: Data couldn't be saved.");
-  }
-}
-
-void writeData(String data, int startAddress) {
-//  Serial.print("MEMORY: Writing '");
-//  Serial.print(data);
-//  Serial.print("' (which is ");
-//  Serial.print(data.length());
-//  Serial.print(" bytes) from address ");
-//  Serial.print(startAddress);
-//  Serial.print(" so it ends at address ");
-//  Serial.println(data.length() + startAddress);
-  data = data+dataDivider;
-  int characterNum = 0;
-  for (int i = startAddress; i < (startAddress + data.length()); i++) {
-    EEPROM.write(i, data[characterNum]);
-    characterNum++;
-  }
-}
-
-void formatMemory(int startAddress, int endAddress) {
-    for (int i=startAddress; i < endAddress; i++) {
-      EEPROM.write(i, ';');
-    }
-}
-
-void restartDevice() {
-  Serial.print("System: Restarting Klimerko in ");
-  Serial.print(deviceRestartWait);
-  Serial.print(" seconds");
-  for (int i = 0; i < deviceRestartWait; i++) {
-    Serial.print(".");
-    delay(1000);
-  }
+  EEPROM.commit();
+  EEPROM.end();
+  Serial.println("[SYSTEM] Klimerko has been factory reset. All data has been erased. Rebooting in 5 seconds.");
+  delay(5000);
   ESP.restart();
 }
 
+void wifiConfigWebServerStarted() {
+  wm.server->on("/exit", wifiConfigStop); // If user presses Exit, turn off WiFi Configuration Portal.
+}
+
+void wifiConfigStarted(WiFiManager *wm) { // Called once WiFi Configuration Portal is started
+  wifiConfigActiveSince = millis();
+}
+
+void wifiConfigStart() { // Starts WiFi Configuration Portal
+  if (!wm.getConfigPortalActive()) {
+    Serial.println("[WIFICONFIG] Entering WiFi Configuration Mode...");
+    wm.startConfigPortal(klimerkoID, wifiConfigPortalPassword);
+    Serial.println("[WIFICONFIG] WiFi Configuration Mode Activated!");
+  } else {
+    Serial.println("[WIFICONFIG] WiFi Configuration Mode already active!");
+  }
+  Serial.print("[WIFICONFIG] Use your computer or smartphone to connect to WiFi network '");
+  Serial.print(klimerkoID);
+  Serial.print("' (password: '");
+  Serial.print(wifiConfigPortalPassword);
+  Serial.println("') to configure your Klimerko.");
+}
+
+void wifiConfigStop() { // Stops WiFi Configuration Portal
+  if (wm.getConfigPortalActive()) {
+    wm.stopConfigPortal();
+    Serial.println("[WIFICONFIG] WiFi Configuration Portal has been stopped.");
+  } else {
+    Serial.println("[WIFICONFIG] Can't stop WiFi Configuration Portal because it's not running.");
+  }
+}
+
+void wifiConfigLoop() { // Keep WiFi Configurartion mode portal in the loop if it's supposed to be active
+  if (wm.getConfigPortalActive()) {
+    wm.process();
+     if (millis() - wifiConfigActiveSince >= wifiConfigTimeout * 1000) {
+       Serial.println("[WIFICONFIG] WiFi Configuration Mode Expired.");
+       wifiConfigStop();
+     }
+  }
+}
+
+void buttonLoop() { // Handles the FLASH button and all it's features
+  buttonCurrentState = digitalRead(BUTTON_PIN);
+  if (buttonLastState == HIGH && buttonCurrentState == LOW) {
+    buttonPressedTime = millis();
+    buttonPressed = true;
+    buttonLongPressDetected = false;
+    // Button is being pressed at the moment
+  } else if (buttonLastState == LOW && buttonCurrentState == HIGH) {
+    buttonReleasedTime = millis();
+    buttonPressed = false;
+    long buttonPressDuration = buttonReleasedTime - buttonPressedTime;
+    if (buttonPressDuration > buttonShortPressTime && buttonPressDuration < buttonMediumPressTime && buttonPressDuration < buttonLongPressTime) {
+      Serial.println("[BUTTON] Short Press Detected!");
+      wifiConfigStop();
+    } else if (buttonPressDuration > buttonShortPressTime && buttonPressDuration > buttonMediumPressTime && buttonPressDuration < buttonLongPressTime) {
+      Serial.println("[BUTTON] Long Press Detected!");
+      wifiConfigStart();
+    }
+  }
+
+  if (buttonPressed && !buttonLongPressDetected) {
+    if (millis() - buttonPressedTime > buttonLongPressTime) {
+      buttonLongPressDetected = true;
+      Serial.println("[BUTTON] Super Long Press Detected!");
+      factoryReset();
+    }
+  }
+  buttonLastState = buttonCurrentState;
+}
+
+void ledLoop() { // Handles status LED
+  if (ledSuccessBlink) {
+    for (int i=0;i<6;i++) {
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(100);
+    }
+    ledSuccessBlink = false;
+  }
+  
+  if (wm.getConfigPortalActive()) {
+    ledState = true;
+  } else {
+    if (wifiConnectionLost || mqttConnectionLost) {
+      if (millis() - ledLastUpdate >= ledBlinkInterval) {
+        ledState = !ledState;
+        ledLastUpdate = millis();
+      }
+    } else {
+      ledState = false;
+    }
+  }
+  
+  if (ledState) {
+    digitalWrite(LED_BUILTIN, LOW);
+  } else {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+}
+
+String extractAssetNameFromTopic(String topic) {
+  const int devicePrefixLength = 38;
+  const int stateSuffixLength = 8;
+  return topic.substring(devicePrefixLength, topic.length()-stateSuffixLength);
+}
+
+void mqttCallback(char* p_topic, byte* p_payload, unsigned int p_length) {
+  Serial.println("[MQTT] Message Received from AllThingsTalk");
+  String topic(p_topic);
+  
+  // Deserialize JSON
+  DynamicJsonDocument doc(256);
+  char json[256];
+  for (int i = 0; i < p_length; i++) {
+      json[i] = (char)p_payload[i];
+  }
+  auto error = deserializeJson(doc, json);
+  if (error) {
+      Serial.print("[MQTT] Parsing JSON failed. Code: ");
+      Serial.println(error.c_str());
+      return;
+  }
+
+  String asset = extractAssetNameFromTopic(topic);
+//  Serial.print("[MQTT] Asset Name: ");
+//  Serial.println(asset);
+
+  if (asset == INTERVAL_ASSET) {
+    int value = doc["value"];
+    changeInterval(value);
+  }
+}
+
+String wifiSignal() {
+  if (!wifiConnectionLost) {
+    int signal = WiFi.RSSI();
+    String signalString;
+    if (signal < -87) {
+        signalString = "Horrible";
+    } else if (signal >= -87 && signal <= -80) {
+        signalString = "Bad";
+    } else if (signal > -80 && signal <= -70) {
+        signalString = "Decent";
+    } else if (signal > -70 && signal <= -55) {
+        signalString = "Good";
+    } else if (signal > -55) {
+        signalString = "Excellent";
+    } else {
+        signalString = "Error";
+    }
+    return signalString;
+  }
+}
+
+void initPMS() {
+  pmsSerial.begin(9600);
+  pmsPower(true);
+}
+
+void initBME() {
+  bme.begin(0x76);
+}
+
+void generateID() {
+  snprintf(klimerkoID, sizeof(klimerkoID), "%s%i", "KLIMERKO-", ESP.getChipId());
+  Serial.print("[ID] Unique Klimerko ID: ");
+  Serial.println(klimerkoID);
+}
+
+void mqttSubscribeTopics() {
+  char command_topic[256];
+  snprintf(command_topic, sizeof command_topic, "%s%s%s", "device/", deviceId, "/asset/+/command");
+  mqtt.subscribe(command_topic);
+}
+
+bool connectMQTT() {
+  if (!wifiConnectionLost) {
+    Serial.print("[MQTT] Connecting to AllThingsTalk... ");
+    if (mqtt.connect(klimerkoID, deviceToken, MQTT_PASSWORD)) {
+      Serial.println("Connected!");
+      if (mqttConnectionLost) {
+        mqttConnectionLost = false;
+        ledSuccessBlink = true;
+      }
+      mqttSubscribeTopics();
+      publishDiagnosticData();
+      return true;
+    } else {
+      Serial.print("Failed! Reason: ");
+      Serial.println(mqtt.state());
+      mqttConnectionLost = true;
+      return false;
+    }
+  }
+  return false;
+}
+
+void maintainMQTT() {
+  mqtt.loop();
+  if (mqtt.connected()) {
+    if (mqttConnectionLost) {
+      mqttConnectionLost = false;
+      publishDiagnosticData();
+    }
+  } else {
+    if (!mqttConnectionLost) {
+      if (wifiConnectionLost) {
+        Serial.println("[MQTT] Lost connection due to WiFi!");
+      } else {
+        Serial.print("[MQTT] Lost Connection. Reason: ");
+        Serial.println(mqtt.state());
+      }
+      mqttConnectionLost = true;
+    }
+    if (millis() - mqttReconnectLastAttempt >= mqttReconnectInterval * 1000 && !wifiConnectionLost) {
+      connectMQTT();
+      mqttReconnectLastAttempt = millis();
+    }
+  }
+}
+
+bool initMQTT() {
+  mqtt.setBufferSize(MQTT_MAX_MESSAGE_SIZE);
+  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setKeepAlive(30);
+  mqtt.setCallback(mqttCallback);
+  return connectMQTT();
+}
+
+bool connectWiFi() {
+  Serial.print("[WiFi] Connecting to WiFi... ");
+  if(!wm.autoConnect(klimerkoID, wifiConfigPortalPassword)) {
+    Serial.print("Failed! Reason: ");
+    Serial.println(WiFi.status());
+    wifiConnectionLost = true;
+    return false;
+  } else {
+    Serial.print("Connected! IP: ");
+    Serial.println(WiFi.localIP());
+    wifiConnectionLost = false;
+    ledSuccessBlink = true;
+    return true;
+  }
+}
+
+void maintainWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    if (wifiConnectionLost) {
+      Serial.print("[WiFi] Connection Re-Established! IP: ");
+      Serial.println(WiFi.localIP());
+      wifiConnectionLost = false;
+      ledSuccessBlink = true;
+    }
+  } else {
+    if (!wifiConnectionLost) {
+      Serial.print("[WiFi] Connection Lost! Reason: ");
+      Serial.println(WiFi.status());
+      wifiConnectionLost = true;
+    }
+    // AutoReconnect handles this, this here exists as backup
+    if (millis() - wifiReconnectLastAttempt >= wifiReconnectInterval * 1000 && !wm.getConfigPortalActive()) {
+      connectWiFi();
+      wifiReconnectLastAttempt = millis();
+    }
+  }
+}
+
+void initWiFi() {
+  wm.setDebugOutput(false);
+  wm.addParameter(&portalDeviceID);
+  wm.addParameter(&portalDeviceToken);
+  wm.addParameter(&portalTemperatureOffset);
+  wm.addParameter(&portalDisplayFirmwareVersion);
+  wm.addParameter(&portalDisplayCredits);
+  wm.setSaveParamsCallback(saveData);
+  wm.setSaveConfigCallback(connectAfterSavingData);
+  wm.setWebServerCallback(wifiConfigWebServerStarted);
+  wm.setAPCallback(wifiConfigStarted);
+  wm.setConfigPortalBlocking(false);
+  wm.setConfigPortalTimeout(wifiConfigTimeout);
+  wm.setConnectRetries(2);
+  wm.setConnectTimeout(5);
+  wm.setDarkMode(true);
+  wm.setTitle("Klimerko");
+  wm.setHostname(klimerkoID);
+  wm.setCountry("RS");
+  wm.setEnableConfigPortal(false);
+  wm.setParamsPage(false);
+  wm.setSaveConnect(true);
+  wm.setBreakAfterConfig(true);
+  wm.setWiFiAutoReconnect(true);
+  WiFi.mode(WIFI_STA);
+  Serial.print("[MEMORY] WiFi SSID: ");
+  if (wm.getWiFiIsSaved()) {
+    Serial.println((String)wm.getWiFiSSID());
+  } else {
+    Serial.println("Nothing in Memory");
+  }
+  connectWiFi();
+}
+
+void initAvg() {
+  pm1.begin();
+  pm25.begin();
+  pm10.begin();
+  temp.begin();
+  hum.begin();
+  pres.begin();
+}
+
+void initPins() {
+  pinMode(BUTTON_PIN, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("");
+  Serial.println(" ------------------------------ Project 'KLIMERKO' ------------------------------");
+  Serial.println("|                  https://github.com/DesconBelgrade/Klimerko                    |");
+  Serial.println("|                               www.klimerko.org                                 |");
+  Serial.print("|                           Firmware Version: ");
+  Serial.print(firmwareVersion);
+  Serial.println("                              |");
+  Serial.println("|    Hold NodeMCU FLASH button for 2 seconds to enter WiFi Configuration Mode.   |");
+  Serial.print("| Sensors are read every ");
+  Serial.print(readIntervalSeconds());
+  Serial.print(" seconds and averages are published every ");
+  Serial.print(dataPublishInterval);
+  Serial.println(" minutes. |");
+  Serial.println(" --------------------------------------------------------------------------------");
+  initAvg();
+  initPins();
+  initPMS();
+  initBME();
+  generateID();
+  restoreData();
+  initWiFi();
+  initMQTT();
+  Serial.println("");
+}
+
 void loop() {
-  readSensors(); // Read data from sensors
-  device.loop(); // Keep the connection to AllThingsTalk alive
-  //configureCredentials(); // Enable credentials configuration from serial interface
+  sensorLoop();
+  maintainWiFi();
+  maintainMQTT();
+  wifiConfigLoop();
+  buttonLoop();
+  ledLoop();  
 }
