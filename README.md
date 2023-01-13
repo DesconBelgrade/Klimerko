@@ -204,7 +204,9 @@ This is a tool that's used to send the "firmware" or "program" to your device.
 - Download and install [Arduino IDE](https://www.arduino.cc/en/Main/software) 
 (choose “*Windows installer, for Windows XP and up*” if you’re on Windows, otherwise it'll download the Windows Store version, which might give you issues).
 
-- If you're running **Apple's MacOS**, also [download and install the CP2102 Driver](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip) in order to enable your Mac to recognize Klimerko for further steps.
+- If you're on **Microsoft Windows**, [download and install the CP2102 Driver for Windows](https://www.silabs.com/documents/public/software/CP210x_Universal_Windows_Driver.zip).
+
+- If you're on **Apple's MacOS**, [download and install the CP2102 Driver for MacOS](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip).
 
 ## Installing ESP8266 Support
 ESP8266 is the "brains" or "processor" of the NodeMCU, but Arduino IDE doesn't support it out-of-the-box. That's an easy one:
