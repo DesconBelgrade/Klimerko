@@ -33,8 +33,8 @@
 #define pmsRX          D6
 
 // ------------------------- Device -----------------------------------------------------
-String         firmwareVersion         = "2.1.0";
-const char*    firmwareVersionPortal   =  "<p>Firmware Version: 2.1.0</p>";
+String         firmwareVersion         = "2.1.1";
+const char*    firmwareVersionPortal   = "<p>Firmware Version: 2.1.1</p>";
 char           klimerkoID[32];
 
 // -------------------------- WiFi ------------------------------------------------------
@@ -44,7 +44,7 @@ unsigned long  wifiReconnectLastAttempt;
 
 // ------------------- WiFi Configuration Portal ----------------------------------------
 char const     *wifiConfigPortalPassword = "ConfigMode"; // Password for WiFi Configuration Portal WiFi Network
-const int      wifiConfigTimeout       = 1800;         // Seconds before WiFi Configuration expires
+const int      wifiConfigTimeout         = 1800;         // Seconds before WiFi Configuration expires
 unsigned long  wifiConfigActiveSince;
 
 // -------------------------- MQTT ------------------------------------------------------
@@ -459,8 +459,8 @@ void publishDiagnosticData() { // Publishes diagnostic data to AllThingsTalk
   }
 }
 
-int readIntervalMillis() {
-  int result = (dataPublishInterval * 60000) / sensorAverageSamples;
+unsigned long readIntervalMillis() {
+  unsigned long result = (dataPublishInterval * 60000) / sensorAverageSamples;
   return result;
 }
 
@@ -806,6 +806,7 @@ String wifiSignal() {
     }
     return signalString;
   }
+  return "Error";
 }
 
 void initPMS() {
