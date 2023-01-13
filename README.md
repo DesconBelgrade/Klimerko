@@ -228,6 +228,7 @@ Your NodeMCU's "brain" is empty at the moment. Let's teach it what it needs to d
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
 - Go to *Tools* > *Port* and you should see **COM** and a number next to it. Choose it.
+  - If you have multiple COM ports available and the one you've chosen doesn't work, try the other ones as well.
   - If you're running **MacOS**, choose */dev/cu.SLAB_USBtoUART*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
 
@@ -369,6 +370,7 @@ This only applies to aforementioned cases due to changes in how data is stored i
 - Now go to *Tools* > *Board* and choose “*NodeMCU 1.0 (ESP-12E Module)*”
 - Go to *Tools* > *Upload Speed* and choose *115200*
 - Go to *Tools* > *Port* and you should see **COM** and a number next to it. Choose it.
+  - If you have multiple COM ports available and the one you've chosen doesn't work, try the other ones as well.
   - If you're running **MacOS**, choose **/dev/cu.SLAB_USBtoUART** or **/dev/cu.usbserial-0001** (if you don't see it, install [the driver first](https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip))
 - Go to *Tools* > *Erase Flash* > *Only Sketch*
 - Go to “Sketch” > “Upload” and wait for the firmware to be uploaded to your Klimerko device
